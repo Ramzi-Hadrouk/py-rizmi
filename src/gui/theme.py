@@ -35,34 +35,15 @@ class Pad:
     XXL = 24
 
 
-def configure_ttk_styles(style: object) -> None:
-    """Apply custom ttk styles for a polished look."""
-    style.configure(".", font=Font.BODY, background=Color.BG)
+import customtkinter as ctk
+import os
+from pathlib import Path
 
-    style.configure("TLabel", background=Color.BG, foreground=Color.FG)
-    style.configure("TFrame", background=Color.BG)
-    style.configure("TButton", padding=(Pad.MD, Pad.SM))
-    style.configure("TLabelframe", background=Color.BG)
-    style.configure("TLabelframe.Label", background=Color.BG,
-                    foreground=Color.FG, font=Font.H2)
-
-    # success / error variants
-    style.configure("Success.TLabel", foreground=Color.SUCCESS,
-                    font=Font.BODY)
-    style.configure("Error.TLabel", foreground=Color.ERROR,
-                    font=Font.BODY)
-    style.configure("Warning.TLabel", foreground=Color.WARNING,
-                    font=Font.BODY)
-
-    # accent buttons
-    style.configure("Accent.TButton", foreground=Color.ACCENT)
-    style.configure("Success.TButton", foreground=Color.SUCCESS)
-    style.configure("Danger.TButton", foreground=Color.ERROR)
-
-    # heading label
-    style.configure("Heading.TLabel", font=Font.H1, background=Color.BG)
-
-    # status bar
-    style.configure("Status.TLabel", font=Font.SMALL,
-                    background=Color.BORDER, foreground=Color.FG,
-                    padding=(Pad.MD, Pad.XS))
+def configure_ctk_styles() -> None:
+    """Apply custom CTk styles and theme."""
+    ctk.set_appearance_mode("Light")
+    theme_path = Path(__file__).resolve().parent / "custom_theme.json"
+    if theme_path.exists():
+        ctk.set_default_color_theme(str(theme_path))
+    else:
+        ctk.set_default_color_theme("blue")

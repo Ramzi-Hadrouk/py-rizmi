@@ -1,10 +1,10 @@
 """Reusable dynamic add/remove list widget (used for features)."""
+import customtkinter as ctk
 import tkinter as tk
-from tkinter import ttk
 from typing import List
 
 
-class DynamicListWidget(ttk.Frame):
+class DynamicListWidget(ctk.CTkFrame):
     """A self-contained widget for managing a list of string values.
 
     Each row has an Entry plus a remove button.
@@ -13,41 +13,46 @@ class DynamicListWidget(ttk.Frame):
     """
 
     def __init__(self, parent, label: str = "Feature", entry_width: int = 35):
-        super().__init__(parent)
+        super().__init__(parent, fg_color="transparent")
         self._label = label
-        self._entry_width = entry_width
+        self._entry_width = entry_width * 10 # roughly converting chars to pixels
         self._rows: list[dict] = []
         self._build()
 
     # ----- UI -----
 
     def _build(self) -> None:
-        self._rows_container = ttk.Frame(self)
-        self._rows_container.pack(fill="x", expand=True)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
-        btn_bar = ttk.Frame(self)
-        btn_bar.pack(fill="x", pady=(6, 0))
-        ttk.Button(
-            btn_bar, text=f"+ Add {self._label}", width=15,
+        self._rows_container = ctk.CTkScrollableFrame(self, fg_color=("gray95", "gray13"), corner_radius=8)
+        self._rows_container.grid(row=0, column=0, sticky="nsew")
+
+        btn_bar = ctk.CTkFrame(self, fg_color="transparent")
+        btn_bar.grid(row=1, column=0, sticky="ew", pady=(10, 0))
+        
+        ctk.CTkButton(
+            btn_bar, text=f"+ Add {self._label}", width=120,
             command=self.add_row,
         ).pack(side="left")
 
         self.add_row()  # start with one empty row
 
     def add_row(self, value: str = "") -> None:
-        row_frame = ttk.Frame(self._rows_container)
-        row_frame.pack(fill="x", pady=2)
+        row_frame = ctk.CTkFrame(self._rows_container, fg_color="transparent")
+        row_frame.pack(fill="x", pady=5)
 
-        var = tk.StringVar(value=value)
-        entry = ttk.Entry(row_frame, textvariable=var, width=self._entry_width)
+        var = ctk.StringVar(value=value)
+        entry = ctk.CTkEntry(row_frame, textvariable=var, width=self._entry_width)
         entry.pack(side="left", fill="x", expand=True)
 
         row = {"frame": row_frame, "var": var, "entry": entry}
-        btn = ttk.Button(
-            row_frame, text="\u2715", width=3,
+        btn = ctk.CTkButton(
+            row_frame, text="\u2715", width=30,
             command=lambda r=row: self._remove_row(r),
+            fg_color="#dc2626", hover_color="#991b1b"
         )
-        btn.pack(side="left", padx=(4, 0))
+        btn.pack(side="left", padx=(10, 0))
 
         self._rows.append(row)
 
