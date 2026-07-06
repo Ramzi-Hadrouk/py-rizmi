@@ -55,6 +55,7 @@ class ViewerTab(QWidget):
             
             entry = QLineEdit()
             entry.setReadOnly(True)
+            entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
             row.addWidget(entry, stretch=1)
             setattr(self, f"{attr_prefix}_entry", entry)
             
@@ -115,7 +116,7 @@ class ViewerTab(QWidget):
         self.jwt_text = QTextEdit()
         self.jwt_text.setReadOnly(True)
         self.jwt_text.setFixedHeight(120)
-        self.jwt_text.setStyleSheet("font-family: monospace; font-size: 11px;")
+        self.jwt_text.setStyleSheet(f"font-family: monospace; font-size: 11px; background-color: white; color: {Color.TEXT}; padding: 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         card.body_layout.addWidget(self.jwt_text)
         
     def _browse_pub(self) -> None:
@@ -141,9 +142,9 @@ class ViewerTab(QWidget):
         
         lbl_v = QLineEdit(value)
         lbl_v.setReadOnly(True)
-        lbl_v.setStyleSheet("background-color: transparent; border: none;")
+        lbl_v.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         if is_mono:
-            lbl_v.setStyleSheet("background-color: transparent; border: none; font-family: monospace;")
+            lbl_v.setStyleSheet(f"background-color: white; color: {Color.TEXT}; font-family: monospace; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
             
         self.form_layout.addRow(lbl_k, lbl_v)
         

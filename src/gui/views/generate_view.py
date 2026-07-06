@@ -59,6 +59,7 @@ class GenerateTab(QWidget):
         self.key_entry = QLineEdit()
         self.key_entry.setReadOnly(True)
         self.key_entry.setPlaceholderText("No key selected…")
+        self.key_entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         btn_browse = QPushButton("Browse…")
         btn_browse.clicked.connect(self._browse_private_key)
         
@@ -93,6 +94,7 @@ class GenerateTab(QWidget):
                 
             entry = QLineEdit()
             entry.setPlaceholderText(f"Enter {label_text.lower()}…")
+            entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
             
             row.addWidget(lbl)
             row.addWidget(entry, stretch=1)
@@ -136,13 +138,16 @@ class GenerateTab(QWidget):
             return widget
             
         self.entry_max_clients = QLineEdit("10")
+        self.entry_max_clients.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         _mini_card("Max Clients", self.entry_max_clients)
         
         self.combo_mode = QComboBox()
+        self.combo_mode.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         self.combo_mode.addItems(["offline", "online"])
         _mini_card("Mode", self.combo_mode)
         
         self.entry_grace_days = QLineEdit("14")
+        self.entry_grace_days.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         _mini_card("Grace Days", self.entry_grace_days)
         
         card.body_layout.addLayout(grid)
@@ -158,6 +163,7 @@ class GenerateTab(QWidget):
         
         self.entry_server_url = QLineEdit()
         self.entry_server_url.setPlaceholderText("https://…  (only needed for online mode)")
+        self.entry_server_url.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         url_row.addWidget(self.entry_server_url, stretch=1)
         card.body_layout.addLayout(url_row)
         
@@ -191,9 +197,10 @@ class GenerateTab(QWidget):
                 lbl_days = QLabel("days:")
                 lbl_days.setStyleSheet(f"color: {Color.FG_MUTED};")
                 l.addWidget(lbl_days)
-                entry_days = QLineEdit("365")
-                entry_days.setFixedWidth(60)
-                l.addWidget(entry_days)
+            entry_days = QLineEdit("365")
+            entry_days.setFixedWidth(60)
+            entry_days.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
+            l.addWidget(entry_days)
                 
             lbl_or = QLabel("  or pick a date:")
             lbl_or.setStyleSheet(f"color: {Color.FG_MUTED};")
@@ -201,6 +208,7 @@ class GenerateTab(QWidget):
             
             picker = QDateEdit(QDate.currentDate())
             picker.setCalendarPopup(True)
+            picker.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
             picker.setEnabled(False) # Auto is checked by default
             l.addWidget(picker)
             l.addStretch()
@@ -383,7 +391,7 @@ class GenerateTab(QWidget):
         
         txt = QTextEdit()
         txt.setReadOnly(True)
-        txt.setStyleSheet("font-family: monospace; font-size: 13px;")
+        txt.setStyleSheet(f"font-family: monospace; font-size: 13px; background-color: white; color: {Color.TEXT}; padding: 8px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         txt.setPlainText(json.dumps(payload.to_dict(), indent=2))
         l.addWidget(txt)
         

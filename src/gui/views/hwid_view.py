@@ -86,7 +86,7 @@ class HWIDTab(QWidget):
         lbl_hash.setStyleSheet("font-weight: bold;")
         self.hwid_entry = QLineEdit()
         self.hwid_entry.setReadOnly(True)
-        self.hwid_entry.setStyleSheet("font-family: monospace; font-size: 13px;")
+        self.hwid_entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; font-family: monospace; font-size: 13px; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         hash_row.addWidget(lbl_hash)
         hash_row.addWidget(self.hwid_entry, stretch=1)
         res_layout.addLayout(hash_row)

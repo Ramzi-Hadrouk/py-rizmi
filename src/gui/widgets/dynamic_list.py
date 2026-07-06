@@ -56,6 +56,7 @@ class DynamicListWidget(QWidget):
         
         entry = QLineEdit(value)
         entry.setMinimumWidth(250)
+        entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         row_layout.addWidget(entry)
         
         btn_rm = QPushButton("\u2715")

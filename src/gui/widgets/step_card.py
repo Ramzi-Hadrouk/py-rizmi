@@ -34,8 +34,8 @@ class StepCard(QFrame):
         inner = QFrame()
         inner.setObjectName("StepCardInner")
         inner_layout = QVBoxLayout(inner)
-        inner_layout.setContentsMargins(16, 14, 16, 16)
-        inner_layout.setSpacing(10)
+        inner_layout.setContentsMargins(14, 12, 14, 12)
+        inner_layout.setSpacing(6)
         bg_layout.addWidget(inner)
 
         # ── Header row ─────────────────────────────────────────────────

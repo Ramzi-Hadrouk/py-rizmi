@@ -35,7 +35,7 @@ class KeyManagerTab(QWidget):
         content.setStyleSheet("background-color: transparent;")
         self.content_layout = QVBoxLayout(content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
-        self.content_layout.setSpacing(20)
+        self.content_layout.setSpacing(12)
         self.content_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         
         scroll.setWidget(content)
@@ -117,6 +117,7 @@ class KeyManagerTab(QWidget):
         self.combo_size = QComboBox()
         self.combo_size.addItems([str(s) for s in KeyPairManager.KEY_SIZES])
         self.combo_size.setCurrentText(str(KeyPairManager.DEFAULT_KEY_SIZE))
+        self.combo_size.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         ctrl.addWidget(self.combo_size)
         
         btn_gen = QPushButton("⚙  Generate Keypair")
@@ -149,9 +150,9 @@ class KeyManagerTab(QWidget):
             
             txt = QTextEdit()
             txt.setReadOnly(True)
-            txt.setStyleSheet("font-family: monospace; font-size: 11px;")
-            txt.setFixedHeight(140)
-            l.addWidget(txt)
+            txt.setStyleSheet(f"font-family: monospace; font-size: 11px; background-color: white; color: {Color.TEXT}; padding: 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
+            txt.setMinimumHeight(100)
+            l.addWidget(txt, stretch=1)
             
             btns = QHBoxLayout()
             btns.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -193,14 +194,17 @@ class KeyManagerTab(QWidget):
             row = QHBoxLayout()
             entry = QLineEdit()
             entry.setReadOnly(True)
+            entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
             setattr(self, f"{attr_prefix}_entry", entry)
             row.addWidget(entry)
-            
+
             btn_browse = QPushButton("Browse…")
             btn_paste = QPushButton("Paste")
+            btn_browse.setFixedWidth(80)
+            btn_paste.setFixedWidth(60)
             row.addWidget(btn_browse)
             row.addWidget(btn_paste)
-            
+
             setattr(self, f"{attr_prefix}_btn_browse", btn_browse)
             setattr(self, f"{attr_prefix}_btn_paste", btn_paste)
             layout.addLayout(row)
@@ -324,6 +328,8 @@ class KeyManagerTab(QWidget):
             QApplication.clipboard().setText(pem)
             self.lbl_gen_info.setText("📋  Private key copied")
             self.lbl_gen_info.setStyleSheet(f"color: {Color.SUCCESS};")
+            if self.app:
+                self.app.status("Private key copied to clipboard", "success")
         else:
             QMessageBox.warning(self, "Warning", "Generate a keypair first.")
             
@@ -333,6 +339,8 @@ class KeyManagerTab(QWidget):
             QApplication.clipboard().setText(pem)
             self.lbl_gen_info.setText("📋  Public key copied")
             self.lbl_gen_info.setStyleSheet(f"color: {Color.SUCCESS};")
+            if self.app:
+                self.app.status("Public key copied to clipboard", "success")
         else:
             QMessageBox.warning(self, "Warning", "Generate a keypair first.")
             
