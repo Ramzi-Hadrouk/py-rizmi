@@ -96,12 +96,12 @@ class GuideView(QWidget):
 
     def _load_guide(self) -> None:
         project_root = Path(__file__).resolve().parent.parent.parent.parent
-        guide_path = project_root / "markdown.md"
+        guide_path = project_root / "README.md"
 
         if not guide_path.exists():
             self.browser.setHtml(
                 MARKDOWN_CSS + "<h2>Guide not found</h2>"
-                "<p>Expected <code>markdown.md</code> in the project root.</p>"
+                "<p>Expected <code>README.md</code> in the project root.</p>"
             )
             return
 
