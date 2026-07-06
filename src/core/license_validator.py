@@ -1,4 +1,6 @@
 """License token validation and decoding (Task 4.5)."""
+from __future__ import annotations
+
 import logging
 import os
 from typing import Any, Dict, Optional

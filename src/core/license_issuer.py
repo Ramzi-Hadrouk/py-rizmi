@@ -1,4 +1,6 @@
 """License token signing / issuance (Task 4.4)."""
+from __future__ import annotations
+
 import logging
 import os
 
