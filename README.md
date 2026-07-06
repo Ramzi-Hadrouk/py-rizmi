@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="media/logo.png" alt="License Management Tool" width="200"/>
+  <img src="media/logo.png" alt="py-Rizmi Licensing" width="200"/>
 </p>
 
-<h1 align="center">License Management Tool</h1>
+<h1 align="center">py-Rizmi Licensing</h1>
 
 <p align="center">
   Offline RSA-signed license issuance, validation, and viewing —<br>
@@ -29,7 +29,7 @@
 
 ## Overview
 
-The **License Management Tool** enables you to issue, validate, and inspect
+**py-Rizmi Licensing** enables you to issue, validate, and inspect
 offline RSA-signed license files using JWT tokens. It is built for deployment
 environments where internet access is unavailable — the license is validated
 locally using a public key and a hardware fingerprint (HWID).
@@ -279,7 +279,7 @@ All 23 tests cover the core layer without any GUI dependencies.
 ## Project Structure
 
 ```
-license-tool/
+py-rizmi/
 ├── main.py                          # GUI entry point
 ├── requirements.txt
 ├── pyproject.toml

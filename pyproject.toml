@@ -1,9 +1,9 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "license-tool"
+name = "py-rizmi"
 version = "1.0.0"
 requires-python = ">=3.10"
 dependencies = ["pyjwt>=2.8.0", "cryptography>=41.0.0"]

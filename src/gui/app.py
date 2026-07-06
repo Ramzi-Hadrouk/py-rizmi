@@ -13,11 +13,11 @@ LOGO_PATH = Path(__file__).resolve().parent.parent.parent / "media" / "logo.png"
 
 
 class LicenseToolApp(tk.Tk):
-    """Root window for the License Management Tool."""
+    """Root window for py-Rizmi Licensing."""
 
     def __init__(self):
         super().__init__()
-        self.title("License Management Tool")
+        self.title("py-Rizmi Licensing")
         self.geometry("820x760")
         self.minsize(720, 640)
 
