@@ -9,13 +9,14 @@ class DynamicListWidget(ttk.Frame):
 
     Each row has an Entry plus a remove button.
     A single *Add* button appends a new blank row.
+    Uses object references for stable row identification.
     """
 
     def __init__(self, parent, label: str = "Feature", entry_width: int = 35):
         super().__init__(parent)
         self._label = label
         self._entry_width = entry_width
-        self._rows: list[tuple[ttk.Frame, tk.StringVar, ttk.Entry]] = []
+        self._rows: list[dict] = []
         self._build()
 
     # ----- UI -----
@@ -41,31 +42,33 @@ class DynamicListWidget(ttk.Frame):
         entry = ttk.Entry(row_frame, textvariable=var, width=self._entry_width)
         entry.pack(side="left", fill="x", expand=True)
 
-        idx = len(self._rows)
+        row = {"frame": row_frame, "var": var, "entry": entry}
         btn = ttk.Button(
-            row_frame, text="✕", width=3,
-            command=lambda i=idx: self._remove_by_index(i),
+            row_frame, text="\u2715", width=3,
+            command=lambda r=row: self._remove_row(r),
         )
         btn.pack(side="left", padx=(4, 0))
 
-        self._rows.append((row_frame, var, entry))
+        self._rows.append(row)
 
-    def _remove_by_index(self, idx: int) -> None:
-        if idx < 0 or idx >= len(self._rows):
+    def _remove_row(self, row: dict) -> None:
+        if row not in self._rows:
             return
-        frame, _, _ = self._rows.pop(idx)
-        frame.destroy()
+        self._rows.remove(row)
+        row["frame"].destroy()
         if not self._rows:
             self.add_row()
 
     # ----- public API -----
 
     def get_values(self) -> List[str]:
-        return [v.get().strip() for _, v, _ in self._rows if v.get().strip()]
+        return [r["var"].get().strip() for r in self._rows
+                if r["var"].get().strip()]
 
     def set_values(self, values: List[str]) -> None:
         while self._rows:
-            self._remove_by_index(0)
+            row = self._rows.pop(0)
+            row["frame"].destroy()
         for val in values:
             self.add_row(val)
         if not self._rows:
