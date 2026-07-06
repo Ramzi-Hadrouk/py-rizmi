@@ -22,9 +22,10 @@ class LicenseToolApp(tk.Tk):
         self.title("py-Rizmi Licensing")
         self.geometry("820x760")
         self.minsize(720, 640)
+        self.configure(bg=Color.BG)
 
-        self._set_icon()
         self._configure_styles()
+        self._set_icon()
         self._build_logo()
         self._build_tabs()
         self._build_status_bar()
@@ -68,15 +69,9 @@ class LicenseToolApp(tk.Tk):
             w_percent = base_width / float(img.size[0])
             h_size = int(float(img.size[1]) * w_percent)
             img = img.resize((base_width, h_size), Image.Resampling.LANCZOS)
-
-            # composite alpha onto background colour so tkinter renders cleanly
-            bg_rgb = tuple(int(Color.BG.lstrip("#")[i:i+2], 16) for i in (0, 2, 4))
-            bg = Image.new("RGBA", img.size, (*bg_rgb, 255))
-            img = Image.alpha_composite(bg, img)
-
             self._logo_img = ImageTk.PhotoImage(img)
-            ttk.Label(self, image=self._logo_img,
-                      background=Color.BG).pack(pady=(Pad.LG, 0))
+            tk.Label(self, image=self._logo_img, bg=Color.BG,
+                     bd=0).pack(pady=(Pad.LG, 0))
         except Exception:
             pass
 
