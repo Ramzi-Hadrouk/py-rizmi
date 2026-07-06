@@ -6,7 +6,7 @@
 
 <p align="center">
   Offline RSA-signed license issuance, validation, and viewing —<br>
-  with a three-tab tkinter GUI, CLI scripts, and a fully testable Python API.
+  with a four-tab tkinter GUI, CLI scripts, and a fully testable Python API.
 </p>
 
 ---
@@ -41,7 +41,8 @@ suitable for integration into any Python application or web backend.
 
 ## Features
 
-- **RSA Keypair Generation** — 2048-bit RSA keys for JWT signing (RS256).
+- **RSA Keypair Management** — Generate (2048/3072/4096-bit), load, paste,
+  and validate RSA keypairs. Verify that private and public keys match.
 - **Machine Fingerprinting** — Deterministic SHA-256 hardware ID based on
   MAC address, hostname, and OS.
 - **License Issuance** — Sign arbitrary payload fields into a JWT token
@@ -50,11 +51,11 @@ suitable for integration into any Python application or web backend.
   on any machine.
 - **Read-Only Viewer** — Decode and inspect any `.lic` file with the
   matching public key — no private key needed.
-- **Three-Tab GUI** — Built with tkinter for cross-platform desktop use.
+- **Four-Tab GUI** — Built with tkinter for cross-platform desktop use.
 - **CLI Scripts** — Headless issuance, key generation, and HWID retrieval
   for server-side automation.
 - **Backend Module** — Drop-in validation function for app-server integration.
-- **Fully Tested** — 23 pytest tests covering all core logic.
+- **Fully Tested** — 34 pytest tests covering all core logic.
 
 ---
 
@@ -87,7 +88,7 @@ python main.py
 
 ## GUI Usage Guide
 
-The application opens a three-tab notebook window.
+The application opens a four-tab notebook window.
 
 ### Tab 1 — Machine ID
 
@@ -95,7 +96,22 @@ The application opens a three-tab notebook window.
 2. The raw fingerprint and SHA-256 hash are displayed.
 3. Click **Copy HWID** and send this hash to your license issuer.
 
-### Tab 2 — License Generation
+### Tab 2 — Key Management
+
+Generate, load, and validate RSA keypairs.
+
+1. **① Generate Keypair** — Select key size (2048, 3072, or 4096) and click
+   **Generate**. The private and public PEM are displayed in read-only text
+   areas. Use **Save Private Key** and **Save Public Key** to write them to
+   `.pem` files.
+2. **② Load Keys** — Browse for existing `.pem` files on disk, or **Paste**
+   PEM content from the clipboard (useful when receiving keys via email or
+   chat).
+3. **③ Validate Pair** — Click **Check Keys** to validate both PEMs and
+   confirm they belong to the same keypair. Result shows a success message
+   with key size or an error explaining the issue.
+
+### Tab 3 — License Generation
 
 1. **① Signing Key** — Browse for an existing private key `.pem` file, or
    click **Generate New Keypair** to create one.
@@ -109,7 +125,7 @@ The application opens a three-tab notebook window.
 3. Click **Preview Payload (JSON)** to inspect the data before signing.
 4. Click **Generate License** and save the `.lic` file.
 
-### Tab 3 — License Viewer
+### Tab 4 — License Viewer
 
 1. Select the matching **public key** `.pem` file.
 2. Select the **license file** `.lic` to inspect.
@@ -185,12 +201,25 @@ from src.core.keypair import KeyPairManager
 # Generate in-memory
 priv_pem, pub_pem = KeyPairManager.generate_keypair()
 
+# Generate with custom key size
+priv_pem, pub_pem = KeyPairManager.generate_keypair(key_size=4096)
+
 # Save to disk
 KeyPairManager.save_keypair("keys/private.pem", "keys/public.pem")
 
 # Load existing keys
 priv = KeyPairManager.load_private_key("keys/private.pem")
 pub = KeyPairManager.load_public_key("keys/public.pem")
+
+# Validate individual key format
+KeyPairManager.validate_private_key(priv_pem)   # True / False
+KeyPairManager.validate_public_key(pub_pem)      # True / False
+
+# Verify that a private and public key belong together
+KeyPairManager.verify_keypair(priv_pem, pub_pem)  # True / False
+
+# Get key size in bits
+KeyPairManager.get_key_size(priv_pem)             # 2048, 4096, or None
 ```
 
 ### License Payload
@@ -272,7 +301,7 @@ pip install -e ".[dev]"
 pytest -v
 ```
 
-All 23 tests cover the core layer without any GUI dependencies.
+All 34 tests cover the core layer without any GUI dependencies.
 
 ---
 
@@ -305,8 +334,9 @@ py-rizmi/
 │   │   ├── tabs/
 │   │   │   ├── __init__.py
 │   │   │   ├── hwid_tab.py          # Tab 1
-│   │   │   ├── generate_tab.py      # Tab 2
-│   │   │   └── viewer_tab.py        # Tab 3
+│   │   │   ├── keymanager_tab.py    # Tab 2
+│   │   │   ├── generate_tab.py      # Tab 3
+│   │   │   └── viewer_tab.py        # Tab 4
 │   │   └── widgets/
 │   │       ├── __init__.py
 │   │       └── dynamic_list.py      # Add/remove list widget
