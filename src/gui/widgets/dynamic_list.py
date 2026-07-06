@@ -1,84 +1,106 @@
-"""Reusable dynamic add/remove list widget (used for features)."""
-import customtkinter as ctk
-import tkinter as tk
+"""Reusable dynamic add/remove list widget for PyQt6."""
 from typing import List
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QScrollArea, QFrame
+)
+from PyQt6.QtCore import Qt
 from ..theme import Color
 
-
-class DynamicListWidget(ctk.CTkFrame):
+class DynamicListWidget(QWidget):
     """A self-contained widget for managing a list of string values.
-
+    
     Each row has an Entry plus a remove button.
     A single *Add* button appends a new blank row.
-    Uses object references for stable row identification.
     """
-
-    def __init__(self, parent, label: str = "Feature", entry_width: int = 35):
-        super().__init__(parent, fg_color="transparent")
+    
+    def __init__(self, label: str = "Feature", parent=None):
+        super().__init__(parent)
         self._label = label
-        self._entry_width = entry_width * 10 # roughly converting chars to pixels
-        self._rows: list[dict] = []
+        self._rows = []
         self._build()
-
-    # ----- UI -----
-
-    def _build(self) -> None:
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        self._rows_container = ctk.CTkScrollableFrame(self, fg_color=("gray95", "gray13"), corner_radius=8)
-        self._rows_container.grid(row=0, column=0, sticky="nsew")
-
-        btn_bar = ctk.CTkFrame(self, fg_color="transparent")
-        btn_bar.grid(row=1, column=0, sticky="ew", pady=(10, 0))
         
-        ctk.CTkButton(
-            btn_bar, text=f"+ Add {self._label}", width=120,
-            command=self.add_row,
-        ).pack(side="left")
-
-        self.add_row()  # start with one empty row
-
+    def _build(self) -> None:
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(10)
+        
+        # Scroll area for rows
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setStyleSheet("background-color: transparent;")
+        
+        self.container = QWidget()
+        self.container.setStyleSheet("background-color: transparent;")
+        self.container_layout = QVBoxLayout(self.container)
+        self.container_layout.setContentsMargins(0, 0, 0, 0)
+        self.container_layout.setSpacing(5)
+        self.container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        
+        self.scroll_area.setWidget(self.container)
+        main_layout.addWidget(self.scroll_area)
+        
+        # Add button
+        self.btn_add = QPushButton(f"+ Add {self._label}")
+        self.btn_add.setFixedWidth(120)
+        main_layout.addWidget(self.btn_add, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.btn_add.clicked.connect(lambda: self.add_row())
+        
+        self.add_row()
+        
     def add_row(self, value: str = "") -> None:
-        row_frame = ctk.CTkFrame(self._rows_container, fg_color="transparent")
-        row_frame.pack(fill="x", pady=5)
-
-        var = ctk.StringVar(value=value)
-        entry = ctk.CTkEntry(row_frame, textvariable=var, width=self._entry_width)
-        entry.pack(side="left", fill="x", expand=True)
-
-        row = {"frame": row_frame, "var": var, "entry": entry}
-        btn = ctk.CTkButton(
-            row_frame, text="\u2715", width=30,
-            command=lambda r=row: self._remove_row(r),
-            fg_color=Color.ERROR, hover_color=Color.ERROR_HOVER
-        )
-        btn.pack(side="left", padx=(10, 0))
-
-        self._rows.append(row)
-
+        row_widget = QWidget()
+        row_layout = QHBoxLayout(row_widget)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(10)
+        
+        entry = QLineEdit(value)
+        entry.setMinimumWidth(250)
+        row_layout.addWidget(entry)
+        
+        btn_rm = QPushButton("\u2715")
+        btn_rm.setFixedSize(30, 30)
+        btn_rm.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Color.ERROR};
+                color: white;
+                border: none;
+                border-radius: 4px;
+            }}
+            QPushButton:hover {{
+                background-color: {Color.ERROR_HOVER};
+            }}
+        """)
+        
+        row_dict = {"widget": row_widget, "entry": entry}
+        btn_rm.clicked.connect(lambda: self._remove_row(row_dict))
+        row_layout.addWidget(btn_rm)
+        
+        self.container_layout.addWidget(row_widget)
+        self._rows.append(row_dict)
+        
     def _remove_row(self, row: dict) -> None:
         if row not in self._rows:
             return
         self._rows.remove(row)
-        row["frame"].destroy()
+        row["widget"].setParent(None)
+        row["widget"].deleteLater()
+        
         if not self._rows:
             self.add_row()
-
-    # ----- public API -----
-
+            
     def get_values(self) -> List[str]:
-        return [r["var"].get().strip() for r in self._rows
-                if r["var"].get().strip()]
-
+        return [r["entry"].text().strip() for r in self._rows if r["entry"].text().strip()]
+        
     def set_values(self, values: List[str]) -> None:
         while self._rows:
             row = self._rows.pop(0)
-            row["frame"].destroy()
+            row["widget"].setParent(None)
+            row["widget"].deleteLater()
         for val in values:
             self.add_row(val)
         if not self._rows:
             self.add_row()
-
+            
     def clear(self) -> None:
         self.set_values([])

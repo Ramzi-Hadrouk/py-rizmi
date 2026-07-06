@@ -1,188 +1,218 @@
-"""Tab 4 — Read-only License Information Viewer."""
-import customtkinter as ctk
-import tkinter as tk
+"""Tab 4 — Read-only License Viewer for PyQt6."""
+import json
 from datetime import datetime, timezone
-from tkinter import filedialog
-from CTkMessagebox import CTkMessagebox
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+    QLineEdit, QFileDialog, QScrollArea, QFrame, QMessageBox,
+    QFormLayout, QTextEdit
+)
+from PyQt6.QtCore import Qt
 
 from ...core.license_validator import LicenseValidator
 from ..theme import Color
+from ..widgets.step_card import StepCard
 
-
-class ViewerTab(ctk.CTkFrame):
-    """Load a .lic file + public key and display decoded fields read-only."""
-
-    def __init__(self, parent, app=None):
-        super().__init__(parent, fg_color="transparent")
+class ViewerTab(QWidget):
+    """View and validate a license file using a public key."""
+    
+    def __init__(self, app=None):
+        super().__init__()
         self.app = app
-        self._var_pub_key = ctk.StringVar()
-        self._var_lic_path = ctk.StringVar()
-        
-        self.grid_rowconfigure(2, weight=1)
-        self.grid_columnconfigure(0, weight=1)
         self._build()
-
+        
     def _build(self) -> None:
-        header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
-
-        ctk.CTkLabel(
-            header, text="License Information Viewer",
-            font=ctk.CTkFont(size=24, weight="bold")
-        ).pack(pady=(0, 5))
-
-        ctk.CTkLabel(
-            header,
-            text=(
-                "Load a .lic file to view decoded license information.\n"
-                "Requires the matching public key \u2014 no private key needed."
-            ),
-            justify="center", text_color="gray50"
-        ).pack()
-
-        # Input Frame
-        input_f = ctk.CTkFrame(self, fg_color=("gray95", "gray13"), corner_radius=8)
-        input_f.grid(row=1, column=0, sticky="ew", padx=20, pady=10)
-        input_f.columnconfigure(1, weight=1)
-
-        # public key
-        ctk.CTkLabel(input_f, text="Public Key:", font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, sticky="w", padx=20, pady=15)
-        ctk.CTkEntry(
-            input_f, textvariable=self._var_pub_key, state="readonly"
-        ).grid(row=0, column=1, sticky="ew", padx=10, pady=15)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         
-        btn_pub = ctk.CTkFrame(input_f, fg_color="transparent")
-        btn_pub.grid(row=0, column=2, padx=(0, 20), pady=15)
-        ctk.CTkButton(btn_pub, text="Browse\u2026", width=80, command=self._browse_pub).pack(side="left")
-
-        # license file
-        ctk.CTkLabel(input_f, text="License File (.lic):", font=ctk.CTkFont(weight="bold")).grid(row=1, column=0, sticky="w", padx=20, pady=(0, 15))
-        ctk.CTkEntry(
-            input_f, textvariable=self._var_lic_path, state="readonly"
-        ).grid(row=1, column=1, sticky="ew", padx=10, pady=(0, 15))
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet("background-color: transparent;")
         
-        btn_lic = ctk.CTkFrame(input_f, fg_color="transparent")
-        btn_lic.grid(row=1, column=2, padx=(0, 20), pady=(0, 15))
-        ctk.CTkButton(btn_lic, text="Browse\u2026", width=80, command=self._browse_lic).pack(side="left")
-
-        ctk.CTkButton(
-            input_f, text="\U0001f50d  Decode & View", height=40,
-            command=self._on_decode
-        ).grid(row=2, column=0, columnspan=3, pady=(10, 20))
-
-        # Result Scrollable Frame (replaces Treeview)
-        self._result_f = ctk.CTkScrollableFrame(self, fg_color=("gray95", "gray13"), corner_radius=8)
-        self._result_f.grid(row=2, column=0, sticky="nsew", padx=20, pady=10)
-        self._result_f.columnconfigure(1, weight=1)
-
-        self._row_widgets = []
-
-    # ----- file browsers -----
-
-    def _browse_pub(self) -> None:
-        p = filedialog.askopenfilename(
-            title="Select Public Key",
-            filetypes=[("PEM files", "*.pem"), ("All files", "*.*")],
-        )
-        if p:
-            self._var_pub_key.set(p)
-
-    def _browse_lic(self) -> None:
-        p = filedialog.askopenfilename(
-            title="Select License File",
-            filetypes=[("License files", "*.lic"), ("All files", "*.*")],
-        )
-        if p:
-            self._var_lic_path.set(p)
-
-    # ----- decode -----
-
-    def _on_decode(self) -> None:
-        pub = self._var_pub_key.get()
-        lic = self._var_lic_path.get()
-        if not pub or not lic:
-            CTkMessagebox(title="Warning", message="Select both a public key and a .lic file.", icon="warning")
-            return
-        try:
-            validator = LicenseValidator.from_file(pub)
-            with open(lic, "r") as f:
-                token = f.read().strip()
-            payload = validator.decode_token(token)
-            self._display(payload)
-            if self.app:
-                self.app.status("License decoded successfully", "success")
-        except Exception as exc:
-            CTkMessagebox(title="Decode Error", message=str(exc), icon="cancel")
-            if self.app:
-                self.app.status(f"Decode failed: {exc}", "error")
-
-    def _display(self, payload: dict) -> None:
-        for w in self._row_widgets:
-            w.destroy()
-        self._row_widgets.clear()
-
-        now = int(datetime.now(tz=timezone.utc).timestamp())
-
-        # Headers
-        header_f = ctk.CTkLabel(self._result_f, text="Field", font=ctk.CTkFont(weight="bold"))
-        header_f.grid(row=0, column=0, sticky="w", padx=20, pady=10)
-        header_v = ctk.CTkLabel(self._result_f, text="Value", font=ctk.CTkFont(weight="bold"))
-        header_v.grid(row=0, column=1, sticky="w", padx=10, pady=10)
-        self._row_widgets.extend([header_f, header_v])
-
-        # Separator
-        sep = ctk.CTkFrame(self._result_f, height=2, fg_color=("gray80", "gray30"))
-        sep.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 10))
-        self._row_widgets.append(sep)
-
-        r = 2
-        for key, val in payload.items():
-            display_val = str(val)
-            if key in ("iat", "exp") and isinstance(val, (int, float)):
-                if val == 0:
-                    display_val = "\u2014  (not set)"
-                else:
-                    dt = datetime.fromtimestamp(val, tz=timezone.utc)
-                    dt_str = dt.strftime("%Y-%m-%d %H:%M:%S UTC")
-                    display_val = f"{val}  \u2192  {dt_str}"
-                    if key == "exp" and val < now:
-                        display_val += "  \u26d4  EXPIRED"
-                    elif key == "exp":
-                        days = (val - now) // 86400
-                        display_val += f"  \u2705  ({days} days remaining)"
-            elif key == "features" and isinstance(val, list):
-                display_val = ", ".join(val) if val else "\u2014"
-
-            lf = ctk.CTkLabel(self._result_f, text=key, font=ctk.CTkFont(family="Courier", size=13))
-            lf.grid(row=r, column=0, sticky="w", padx=20, pady=5)
-            lv = ctk.CTkLabel(self._result_f, text=display_val, font=ctk.CTkFont(family="Courier", size=13), justify="left", wraplength=500)
-            lv.grid(row=r, column=1, sticky="w", padx=10, pady=5)
+        content = QWidget()
+        content.setStyleSheet("background-color: transparent;")
+        self.content_layout = QVBoxLayout(content)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(20)
+        self.content_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
+        
+        self._build_input_card()
+        self._build_results_card()
+        
+    def _build_input_card(self) -> None:
+        card = StepCard(step=1, title="Select Files")
+        self.content_layout.addWidget(card)
+        
+        def _add_file_row(label, attr_prefix):
+            row = QHBoxLayout()
+            lbl = QLabel(label)
+            lbl.setFixedWidth(120)
+            lbl.setStyleSheet("font-weight: bold;")
+            row.addWidget(lbl)
             
-            self._row_widgets.extend([lf, lv])
-            r += 1
-
-        # add blank + status row
-        sep2 = ctk.CTkFrame(self._result_f, height=2, fg_color=("gray80", "gray30"))
-        sep2.grid(row=r, column=0, columnspan=2, sticky="ew", padx=10, pady=(15, 10))
-        self._row_widgets.append(sep2)
-        r += 1
-
-        exp = payload.get("exp", 0)
-        status_l = ctk.CTkLabel(self._result_f, text="STATUS", font=ctk.CTkFont(weight="bold"))
-        status_l.grid(row=r, column=0, sticky="w", padx=20, pady=10)
+            entry = QLineEdit()
+            entry.setReadOnly(True)
+            row.addWidget(entry, stretch=1)
+            setattr(self, f"{attr_prefix}_entry", entry)
+            
+            btn = QPushButton("Browse…")
+            row.addWidget(btn)
+            setattr(self, f"{attr_prefix}_btn", btn)
+            
+            card.body_layout.addLayout(row)
+            
+        _add_file_row("🔓 Public Key:", "pub")
+        self.pub_btn.clicked.connect(self._browse_pub)
         
-        status_color = Color.FG
-        if exp and exp >= now:
-            status_text = "\u2705  VALID"
-            status_color = Color.SUCCESS
-        elif exp and exp < now:
-            status_text = "\u26d4  EXPIRED"
-            status_color = Color.ERROR
-        else:
-            status_text = "\u26a0  NO EXPIRATION SET"
-            status_color = Color.WARNING
-
-        status_v = ctk.CTkLabel(self._result_f, text=status_text, text_color=status_color, font=ctk.CTkFont(weight="bold"))
-        status_v.grid(row=r, column=1, sticky="w", padx=10, pady=10)
+        _add_file_row("📄 License File:", "lic")
+        self.lic_btn.clicked.connect(self._browse_lic)
         
-        self._row_widgets.extend([status_l, status_v])
+        act_row = QHBoxLayout()
+        act_row.addSpacing(130)
+        
+        btn_view = QPushButton("🔍  Decode & View")
+        btn_view.setFixedSize(160, 36)
+        btn_view.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Color.ACCENT};
+                color: white;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {Color.ACCENT_HOVER};
+            }}
+        """)
+        btn_view.clicked.connect(self._on_view)
+        act_row.addWidget(btn_view)
+        
+        self.lbl_status = QLabel("")
+        self.lbl_status.setStyleSheet("font-weight: bold;")
+        act_row.addWidget(self.lbl_status)
+        act_row.addStretch()
+        
+        card.body_layout.addSpacing(10)
+        card.body_layout.addLayout(act_row)
+        
+    def _build_results_card(self) -> None:
+        card = StepCard(step=2, title="License Data")
+        self.content_layout.addWidget(card)
+        
+        # Form layout for easy key-value alignment
+        self.form_widget = QWidget()
+        self.form_layout = QFormLayout(self.form_widget)
+        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        self.form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.form_layout.setHorizontalSpacing(20)
+        self.form_layout.setVerticalSpacing(10)
+        
+        # We will dynamically populate this form in _on_view
+        card.body_layout.addWidget(self.form_widget)
+        
+        # JWT raw text
+        self.jwt_text = QTextEdit()
+        self.jwt_text.setReadOnly(True)
+        self.jwt_text.setFixedHeight(120)
+        self.jwt_text.setStyleSheet("font-family: monospace; font-size: 11px;")
+        card.body_layout.addWidget(self.jwt_text)
+        
+    def _browse_pub(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Select Public Key", "", "PEM files (*.pem);;All files (*.*)")
+        if path:
+            self.pub_entry.setText(path)
+            
+    def _browse_lic(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Select License", "", "License files (*.lic);;All files (*.*)")
+        if path:
+            self.lic_entry.setText(path)
+            
+    def _clear_form(self) -> None:
+        while self.form_layout.count():
+            item = self.form_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self.jwt_text.clear()
+        
+    def _add_form_row(self, key: str, value: str, is_mono: bool = False) -> None:
+        lbl_k = QLabel(f"{key}:")
+        lbl_k.setStyleSheet("font-weight: bold; color: #9ca3af;")
+        
+        lbl_v = QLineEdit(value)
+        lbl_v.setReadOnly(True)
+        lbl_v.setStyleSheet("background-color: transparent; border: none;")
+        if is_mono:
+            lbl_v.setStyleSheet("background-color: transparent; border: none; font-family: monospace;")
+            
+        self.form_layout.addRow(lbl_k, lbl_v)
+        
+    def _on_view(self) -> None:
+        self._clear_form()
+        
+        pub_path = self.pub_entry.text()
+        lic_path = self.lic_entry.text()
+        
+        if not pub_path or not lic_path:
+            QMessageBox.warning(self, "Missing Files", "Select both a public key and a license file.")
+            return
+            
+        try:
+            validator = LicenseValidator.from_file(pub_path)
+            with open(lic_path, "r") as f:
+                token = f.read().strip()
+                
+            self.jwt_text.setPlainText(token)
+            
+            # Use decode_token (no verification checks) just to read data
+            data = validator.decode_token(token)
+            
+            self.lbl_status.setText("✅  Decoded successfully")
+            self.lbl_status.setStyleSheet(f"color: {Color.SUCCESS}; font-weight: bold;")
+            
+            # Format dates
+            iat_dt = datetime.fromtimestamp(data.get("iat", 0), tz=timezone.utc)
+            exp_dt = datetime.fromtimestamp(data.get("exp", 0), tz=timezone.utc)
+            
+            now = datetime.now(timezone.utc)
+            delta = exp_dt - now
+            days_left = delta.days
+            
+            if days_left < 0:
+                exp_str = f"{exp_dt.strftime('%Y-%m-%d %H:%M:%S')} (EXPIRED by {abs(days_left)} days)"
+                exp_color = Color.ERROR
+            else:
+                exp_str = f"{exp_dt.strftime('%Y-%m-%d %H:%M:%S')} ({days_left} days remaining)"
+                exp_color = Color.SUCCESS
+                
+            # Populate form
+            self._add_form_row("Client", data.get("client", ""))
+            self._add_form_row("License ID", data.get("license_id", ""), is_mono=True)
+            self._add_form_row("HWID", data.get("hwid", ""), is_mono=True)
+            
+            feat = data.get("features", [])
+            self._add_form_row("Features", ", ".join(feat) if feat else "None")
+            
+            self._add_form_row("Mode", data.get("mode", ""))
+            self._add_form_row("Max Clients", str(data.get("max_clients", "")))
+            self._add_form_row("Grace Days", str(data.get("grace_days", "")))
+            self._add_form_row("Server URL", data.get("server_url", "") or "N/A")
+            
+            self._add_form_row("Issued At", iat_dt.strftime('%Y-%m-%d %H:%M:%S'))
+            
+            # Custom styled row for Expiry
+            lbl_k = QLabel("Expires At:")
+            lbl_k.setStyleSheet("font-weight: bold; color: #9ca3af;")
+            lbl_v = QLabel(exp_str)
+            lbl_v.setStyleSheet(f"color: {exp_color}; font-weight: bold;")
+            self.form_layout.addRow(lbl_k, lbl_v)
+            
+            if self.app:
+                self.app.status("License decoded", "info")
+                
+        except Exception as exc:
+            self.lbl_status.setText("❌  Decode failed")
+            self.lbl_status.setStyleSheet(f"color: {Color.ERROR}; font-weight: bold;")
+            QMessageBox.critical(self, "Error", f"Failed to decode license:\n{exc}")
+            if self.app:
+                self.app.status("License decode failed", "error")

@@ -1,9 +1,15 @@
-"""Main application window — Sidebar navigation with modern CustomTkinter UI."""
-import customtkinter as ctk
+"""Main application window — Sidebar navigation with PyQt6."""
+import os
 from pathlib import Path
-from PIL import Image
+from PyQt6.QtWidgets import (
+    QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, 
+    QLabel, QPushButton, QStackedWidget, QFrame, QSizePolicy
+)
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QIcon, QPixmap, QFont
 
-from .theme import Color, configure_ctk_styles
+from .theme import Color, get_base_stylesheet
+
 from .views.hwid_view import HWIDTab as HWIDView
 from .views.keymanager_view import KeyManagerTab as KeyManagerView
 from .views.generate_view import GenerateTab as GenerateView
@@ -12,22 +18,32 @@ from .views.guide_view import GuideView
 
 LOGO_PATH = Path(__file__).resolve().parent.parent.parent / "media" / "logo.png"
 
-class LicenseToolApp(ctk.CTk):
+
+class LicenseToolApp(QMainWindow):
     """Root window for py-Rizmi Licensing."""
 
     def __init__(self):
         super().__init__()
-        self.title("py-Rizmi Licensing")
-        self.geometry("900x700")
-        self.minsize(800, 600)
-
-        configure_ctk_styles()
+        self.setWindowTitle("py-Rizmi Licensing")
+        self.resize(900, 700)
+        self.setMinimumSize(800, 600)
         
-        # Grid Layout: 1 row, 2 columns
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
+        self.setStyleSheet(get_base_stylesheet())
+
+        # Central Widget
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        
+        self.main_layout = QHBoxLayout(self.central_widget)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
 
         self._build_sidebar()
+        
+        # Stacked Widget for Views
+        self.stack = QStackedWidget()
+        self.main_layout.addWidget(self.stack, stretch=1)
+        
         self._build_views()
 
         self.select_view("hwid")
@@ -36,79 +52,116 @@ class LicenseToolApp(ctk.CTk):
     def status(self, message: str, kind: str = "info") -> None:
         """Update the status bar with a message and colour."""
         color_map = {
-            "info": Color.FG,
+            "info": Color.FG_MUTED,
             "success": Color.SUCCESS,
             "error": Color.ERROR,
             "warning": Color.WARNING,
         }
-        self._status_label.configure(text=message, text_color=color_map.get(kind, Color.FG))
+        color = color_map.get(kind, Color.FG_MUTED)
+        self._status_label.setStyleSheet(f"color: {color};")
+        self._status_label.setText(message)
 
     def _build_sidebar(self) -> None:
-        self.sidebar_frame = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=("gray95", "gray10"))
-        self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(6, weight=1)
+        self.sidebar_frame = QFrame()
+        self.sidebar_frame.setFixedWidth(220)
+        self.sidebar_frame.setStyleSheet("background-color: #1a1a1a; border-right: 1px solid #333;")
+        
+        sidebar_layout = QVBoxLayout(self.sidebar_frame)
+        sidebar_layout.setContentsMargins(15, 30, 15, 20)
+        sidebar_layout.setSpacing(5)
+        
+        self.main_layout.addWidget(self.sidebar_frame)
 
-        # Logo - Fixed Aspect Ratio
-        try:
-            img = Image.open(LOGO_PATH)
-            w, h = img.size
-            target_w = 160
-            target_h = int(target_w * (h / w))
-            self._logo_img = ctk.CTkImage(light_image=img, dark_image=img, size=(target_w, target_h))
-            self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="", image=self._logo_img)
-            self.logo_label.grid(row=0, column=0, padx=20, pady=(40, 40))
-        except Exception:
-            self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="py-Rizmi", font=ctk.CTkFont(size=24, weight="bold"))
-            self.logo_label.grid(row=0, column=0, padx=20, pady=(40, 40))
+        # Logo
+        self.logo_label = QLabel()
+        self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if LOGO_PATH.exists():
+            pixmap = QPixmap(str(LOGO_PATH))
+            scaled_pixmap = pixmap.scaled(160, 160, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.logo_label.setPixmap(scaled_pixmap)
+        else:
+            self.logo_label.setText("py-Rizmi")
+            font = self.logo_label.font()
+            font.setPointSize(18)
+            font.setBold(True)
+            self.logo_label.setFont(font)
+        
+        sidebar_layout.addWidget(self.logo_label)
+        sidebar_layout.addSpacing(30)
 
-        # Nav Buttons (Modern styling)
-        nav_kwargs = {
-            "fg_color": "transparent",
-            "text_color": ("gray10", "gray90"),
-            "hover_color": ("gray85", "gray20"),
-            "anchor": "w",
-            "font": ctk.CTkFont(size=14),
-            "height": 40
-        }
+        # Nav Buttons
+        self.nav_buttons = {}
 
-        self.nav_hwid = ctk.CTkButton(self.sidebar_frame, text="  Machine ID", command=lambda: self.select_view("hwid"), **nav_kwargs)
-        self.nav_hwid.grid(row=1, column=0, padx=15, pady=5, sticky="ew")
+        def add_nav(key, text):
+            btn = QPushButton(text)
+            btn.setCheckable(True)
+            btn.setFixedHeight(40)
+            btn.setStyleSheet("""
+                QPushButton {
+                    text-align: left;
+                    padding-left: 15px;
+                    border: none;
+                    border-radius: 6px;
+                    background-color: transparent;
+                    color: #d1d5db;
+                    font-size: 14px;
+                }
+                QPushButton:hover {
+                    background-color: #374151;
+                }
+                QPushButton:checked {
+                    background-color: #374151;
+                    color: #ffffff;
+                    font-weight: bold;
+                }
+            """)
+            btn.clicked.connect(lambda _, k=key: self.select_view(k))
+            sidebar_layout.addWidget(btn)
+            self.nav_buttons[key] = btn
 
-        self.nav_keys = ctk.CTkButton(self.sidebar_frame, text="  Key Management", command=lambda: self.select_view("keys"), **nav_kwargs)
-        self.nav_keys.grid(row=2, column=0, padx=15, pady=5, sticky="ew")
+        add_nav("hwid", "  Machine ID")
+        add_nav("keys", "  Key Management")
+        add_nav("gen", "  License Generation")
+        add_nav("view", "  License Viewer")
+        add_nav("guide", "  Integration Guide")
 
-        self.nav_gen = ctk.CTkButton(self.sidebar_frame, text="  License Generation", command=lambda: self.select_view("gen"), **nav_kwargs)
-        self.nav_gen.grid(row=3, column=0, padx=15, pady=5, sticky="ew")
-
-        self.nav_view = ctk.CTkButton(self.sidebar_frame, text="  License Viewer", command=lambda: self.select_view("view"), **nav_kwargs)
-        self.nav_view.grid(row=4, column=0, padx=15, pady=5, sticky="ew")
-
-        self.nav_guide = ctk.CTkButton(self.sidebar_frame, text="  Integration Guide", command=lambda: self.select_view("guide"), **nav_kwargs)
-        self.nav_guide.grid(row=5, column=0, padx=15, pady=5, sticky="ew")
+        sidebar_layout.addStretch()
 
         # Status
-        self._status_label = ctk.CTkLabel(self.sidebar_frame, text="", font=ctk.CTkFont(size=12), text_color="gray50")
-        self._status_label.grid(row=7, column=0, padx=20, pady=20, sticky="sw")
+        self._status_label = QLabel()
+        self._status_label.setWordWrap(True)
+        self._status_label.setStyleSheet("color: #9ca3af; font-size: 12px;")
+        sidebar_layout.addWidget(self._status_label)
 
     def _build_views(self) -> None:
         self.views = {}
         
-        self.views["hwid"] = HWIDView(self, app=self)
-        self.views["keys"] = KeyManagerView(self, app=self)
-        self.views["gen"] = GenerateView(self, get_hwid_cb=self.views["hwid"].get_hwid, app=self)
-        self.views["view"] = ViewerView(self, app=self)
-        self.views["guide"] = GuideView(self, app=self)
+        # Initialize views and pass `self` as the app reference.
+        self.views["hwid"] = HWIDView(self)
+        self.views["keys"] = KeyManagerView(self)
+        self.views["gen"] = GenerateView(self.views["hwid"].get_hwid, self)
+        self.views["view"] = ViewerView(self)
+        self.views["guide"] = GuideView(self)
 
-        for view in self.views.values():
-            view.grid(row=0, column=1, sticky="nsew", padx=30, pady=30)
-
+        for key, view in self.views.items():
+            # Wrap in a container for padding
+            container = QWidget()
+            container_layout = QVBoxLayout(container)
+            container_layout.setContentsMargins(30, 30, 30, 30)
+            container_layout.addWidget(view)
+            self.stack.addWidget(container)
+            
+            # Store the container index as a property on the view or map it manually
+            # But we can just use the index of addition
+            
     def select_view(self, name: str):
-        # Update button colors and view visibility
-        for btn_name, btn in [("hwid", self.nav_hwid), ("keys", self.nav_keys), ("gen", self.nav_gen), ("view", self.nav_view), ("guide", self.nav_guide)]:
-            if name == btn_name:
-                btn.configure(fg_color=("gray85", "gray25"))
-                self.views[btn_name].grid(row=0, column=1, sticky="nsew", padx=30, pady=30)
-            else:
-                btn.configure(fg_color="transparent")
-                if btn_name in self.views:
-                    self.views[btn_name].grid_remove()
+        # Update button states
+        for key, btn in self.nav_buttons.items():
+            btn.setChecked(key == name)
+            
+        # Update stacked widget
+        # The indices match the order we added them
+        index_map = ["hwid", "keys", "gen", "view", "guide"]
+        if name in index_map:
+            idx = index_map.index(name)
+            self.stack.setCurrentIndex(idx)

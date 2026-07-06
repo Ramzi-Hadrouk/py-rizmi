@@ -1,52 +1,67 @@
-"""Shared theme constants and style configuration for the GUI."""
+"""Centralized styling and theming for PyQt6."""
+import qdarktheme
 
-# ---------- color palette ----------
 class Color:
-    BG = "#f5f5f5"
-    FG = "#1a1a1a"
-    ACCENT = "#2563eb"       # blue-600
-    ACCENT_HOVER = "#1d4ed8" # blue-700
-    ACCENT_LIGHT = "#dbeafe" # blue-100
-    SUCCESS = "#16a34a"      # green-600
+    """Color palette matching the dark modern design."""
+    ACCENT = "#2563eb"
+    ACCENT_HOVER = "#1d4ed8"
+    ACCENT_LIGHT = "#dbeafe"
+    SUCCESS = "#16a34a"
     SUCCESS_LIGHT = "#dcfce7"
-    ERROR = "#dc2626"        # red-600
-    ERROR_HOVER = "#991b1b"  # red-800
+    ERROR = "#dc2626"
+    ERROR_HOVER = "#991b1b"
     ERROR_LIGHT = "#fee2e2"
-    WARNING = "#d97706"      # amber-600
-    WARNING_HOVER = "#b45309"# amber-700
+    WARNING = "#d97706"
+    WARNING_HOVER = "#b45309"
     WARNING_LIGHT = "#fef3c7"
-    DISABLED = "#9ca3af"
-    BORDER = "#d1d5db"
-    WHITE = "#ffffff"
+    FG_MUTED = "#9ca3af"
 
-# ---------- font sizes ----------
-class Font:
-    H1 = ("TkDefaultFont", 14, "bold")
-    H2 = ("TkDefaultFont", 12, "bold")
-    BODY = ("TkDefaultFont", 10)
-    SMALL = ("TkDefaultFont", 9)
-    MONO = ("Consolas", 10)
-    MONO_SMALL = ("Consolas", 9)
+def apply_theme(app) -> None:
+    """Apply the custom qdarktheme with our accent colors."""
+    qdarktheme.setup_theme(
+        theme="dark",
+        custom_colors={
+            "[dark]": {
+                "primary": Color.ACCENT,
+            },
+            "[light]": {
+                "primary": Color.ACCENT,
+            },
+        },
+        corner_shape="rounded",
+    )
 
-# ---------- padding ----------
-class Pad:
-    XS = 2
-    SM = 4
-    MD = 8
-    LG = 12
-    XL = 16
-    XXL = 24
-
-
-import customtkinter as ctk
-import os
-from pathlib import Path
-
-def configure_ctk_styles() -> None:
-    """Apply custom CTk styles and theme."""
-    ctk.set_appearance_mode("Light")
-    theme_path = Path(__file__).resolve().parent / "custom_theme.json"
-    if theme_path.exists():
-        ctk.set_default_color_theme(str(theme_path))
-    else:
-        ctk.set_default_color_theme("blue")
+def get_base_stylesheet() -> str:
+    """Returns extra QSS for specific custom widgets not covered by qdarktheme."""
+    return f"""
+    /* StepCard */
+    QFrame#StepCardBody {{
+        background-color: transparent;
+    }}
+    QFrame#StepCardAccent {{
+        background-color: {Color.ACCENT};
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }}
+    QFrame#StepCardInner {{
+        background-color: transparent;
+    }}
+    QLabel#StepNumber {{
+        color: {Color.ACCENT};
+        font-weight: bold;
+        font-size: 11px;
+    }}
+    QLabel#StepTitle {{
+        font-weight: bold;
+        font-size: 15px;
+    }}
+    QFrame#StepDivider {{
+        background-color: #374151; /* gray-700 */
+    }}
+    
+    /* Utility panels */
+    QFrame#Panel {{
+        background-color: #1f2937; /* gray-800 */
+        border-radius: 8px;
+    }}
+    """

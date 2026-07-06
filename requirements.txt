@@ -1,3 +1,4 @@
 pyjwt>=2.8.0
 cryptography>=41.0.0
-pytest>=7.4.0
+PyQt6>=6.6.0
+pyqtdarktheme>=2.1.0

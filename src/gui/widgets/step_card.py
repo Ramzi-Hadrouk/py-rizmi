@@ -1,48 +1,67 @@
 """Reusable StepCard widget — numbered card with accent left stripe."""
-import customtkinter as ctk
-from ..theme import Color
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QLabel, QWidget
+from PyQt6.QtCore import Qt
 
-
-class StepCard(ctk.CTkFrame):
+class StepCard(QFrame):
     """A card with a colored left-accent stripe, step number, title, divider,
-    and a public `body` frame where callers place their content."""
+    and a public `body_layout` where callers place their content."""
 
-    def __init__(self, parent, step: int, title: str, **kwargs):
-        kwargs.setdefault("fg_color", ("gray95", "gray13"))
-        kwargs.setdefault("corner_radius", 10)
-        super().__init__(parent, **kwargs)
+    def __init__(self, step: int, title: str, parent=None):
+        super().__init__(parent)
+        self.setObjectName("StepCardBody")
+        
+        # Main layout for the card
+        self.main_layout = QHBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+        
+        # Background frame to apply styling properly
+        bg_frame = QFrame()
+        bg_frame.setStyleSheet("background-color: #1f2937; border-radius: 10px;") # gray-800
+        bg_layout = QHBoxLayout(bg_frame)
+        bg_layout.setContentsMargins(0, 0, 0, 0)
+        bg_layout.setSpacing(0)
+        self.main_layout.addWidget(bg_frame)
 
         # ── Left accent stripe ─────────────────────────────────────────
-        ctk.CTkFrame(
-            self, width=4, fg_color=Color.ACCENT, corner_radius=0
-        ).pack(side="left", fill="y")
+        accent = QFrame()
+        accent.setObjectName("StepCardAccent")
+        accent.setFixedWidth(4)
+        bg_layout.addWidget(accent)
 
         # ── Inner wrapper ──────────────────────────────────────────────
-        inner = ctk.CTkFrame(self, fg_color="transparent")
-        inner.pack(side="left", fill="both", expand=True)
+        inner = QFrame()
+        inner.setObjectName("StepCardInner")
+        inner_layout = QVBoxLayout(inner)
+        inner_layout.setContentsMargins(16, 14, 16, 16)
+        inner_layout.setSpacing(10)
+        bg_layout.addWidget(inner)
 
         # ── Header row ─────────────────────────────────────────────────
-        hdr = ctk.CTkFrame(inner, fg_color="transparent")
-        hdr.pack(fill="x", padx=(12, 16), pady=(14, 0))
-
-        ctk.CTkLabel(
-            hdr,
-            text=f"STEP {step}",
-            text_color=Color.ACCENT,
-            font=ctk.CTkFont(size=10, weight="bold"),
-        ).pack(side="left")
-
-        ctk.CTkLabel(
-            hdr,
-            text=f"  —  {title}",
-            font=ctk.CTkFont(size=14, weight="bold"),
-        ).pack(side="left")
+        hdr = QWidget()
+        hdr_layout = QHBoxLayout(hdr)
+        hdr_layout.setContentsMargins(0, 0, 0, 0)
+        
+        lbl_step = QLabel(f"STEP {step}")
+        lbl_step.setObjectName("StepNumber")
+        hdr_layout.addWidget(lbl_step)
+        
+        lbl_title = QLabel(f"  —  {title}")
+        lbl_title.setObjectName("StepTitle")
+        hdr_layout.addWidget(lbl_title)
+        hdr_layout.addStretch()
+        
+        inner_layout.addWidget(hdr)
 
         # ── Divider ────────────────────────────────────────────────────
-        ctk.CTkFrame(
-            inner, height=1, fg_color=("gray80", "gray30")
-        ).pack(fill="x", padx=(12, 16), pady=(8, 0))
+        divider = QFrame()
+        divider.setObjectName("StepDivider")
+        divider.setFixedHeight(1)
+        inner_layout.addWidget(divider)
 
         # ── Public body ─────────────────────────────────────────────────
-        self.body = ctk.CTkFrame(inner, fg_color="transparent")
-        self.body.pack(fill="both", expand=True, padx=(12, 16), pady=(10, 16))
+        self.body_widget = QWidget()
+        self.body_layout = QVBoxLayout(self.body_widget)
+        self.body_layout.setContentsMargins(0, 6, 0, 0)
+        self.body_layout.setSpacing(10)
+        inner_layout.addWidget(self.body_widget)
