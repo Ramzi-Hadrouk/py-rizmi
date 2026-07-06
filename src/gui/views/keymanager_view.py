@@ -8,6 +8,7 @@ from CTkMessagebox import CTkMessagebox
 
 from ...core.keypair import KeyPairManager
 from ..theme import Color
+from ..widgets.step_card import StepCard
 
 
 class KeyManagerTab(ctk.CTkScrollableFrame):
@@ -18,159 +19,226 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
         super().__init__(parent, fg_color="transparent")
         self.app = app
         self._temp_files: list[str] = []
-        
+        self._active_source = "generate"
+
         self.grid_columnconfigure(0, weight=1)
         self._build()
 
     # ===================== UI =====================
 
     def _build(self) -> None:
-        self._build_generate_section()
-        self._build_load_section()
-        self._build_validate_section()
+        self._build_source_card()
+        self._build_validate_card()
 
-    # ---------- ① Generate ----------
+    # ─── STEP 1: Key Source ───────────────────────────────────────────
 
-    def _build_generate_section(self) -> None:
-        f = ctk.CTkFrame(self, fg_color=("gray95", "gray13"), corner_radius=8)
-        f.grid(row=0, column=0, sticky="ew", padx=20, pady=(10, 10))
-        f.columnconfigure(1, weight=1)
+    def _build_source_card(self) -> None:
+        card = StepCard(self, step=1, title="Key Source")
+        card.grid(row=0, column=0, sticky="ew", padx=20, pady=(10, 8))
+        card.body.columnconfigure(0, weight=1)
 
-        # Title
-        ctk.CTkLabel(f, text="\u2460  Generate Keypair", font=ctk.CTkFont(size=18, weight="bold")).grid(row=0, column=0, columnspan=2, sticky="w", padx=20, pady=(20, 10))
-
-        # key size row
-        ctk.CTkLabel(f, text="Key Size:", font=ctk.CTkFont(weight="bold")).grid(
-            row=1, column=0, sticky="w", padx=20, pady=10
+        # Segmented switcher
+        seg = ctk.CTkSegmentedButton(
+            card.body,
+            values=["⚙  Generate New Keypair", "📂  Load Existing Keys"],
+            command=self._on_source_change,
+            font=ctk.CTkFont(size=13),
+            height=36,
         )
-        size_row = ctk.CTkFrame(f, fg_color="transparent")
-        size_row.grid(row=1, column=1, sticky="w", padx=10, pady=10)
-        
+        seg.set("⚙  Generate New Keypair")
+        seg.grid(row=0, column=0, sticky="ew", pady=(0, 14))
+
+        # ── Panel A: Generate ──────────────────────────────────────────
+        self._gen_panel = ctk.CTkFrame(card.body, fg_color="transparent")
+        self._gen_panel.grid(row=1, column=0, sticky="nsew")
+        self._gen_panel.columnconfigure(0, weight=1)
+        self._gen_panel.columnconfigure(1, weight=1)
+        self._build_generate_panel(self._gen_panel)
+
+        # ── Panel B: Load ──────────────────────────────────────────────
+        self._load_panel = ctk.CTkFrame(card.body, fg_color="transparent")
+        # NOT gridded initially — shown on demand
+        self._load_panel.columnconfigure(0, weight=1)
+        self._build_load_panel(self._load_panel)
+
+    # ── Generate panel ────────────────────────────────────────────────
+
+    def _build_generate_panel(self, parent: ctk.CTkFrame) -> None:
+        # Key size + Generate button row
+        ctrl = ctk.CTkFrame(parent, fg_color="transparent")
+        ctrl.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+
+        ctk.CTkLabel(ctrl, text="Key Size:", font=ctk.CTkFont(weight="bold"),
+                     text_color="gray50").pack(side="left")
+
         self._var_key_size = ctk.StringVar(value=str(KeyPairManager.DEFAULT_KEY_SIZE))
         ctk.CTkComboBox(
-            size_row,
+            ctrl,
             variable=self._var_key_size,
             values=[str(s) for s in KeyPairManager.KEY_SIZES],
             state="readonly",
-            width=120,
-        ).pack(side="left")
-        
-        ctk.CTkButton(
-            size_row, text="\u2699  Generate", command=self._on_generate,
-            width=120
-        ).pack(side="left", padx=20)
+            width=110,
+        ).pack(side="left", padx=(8, 0))
 
-        # private key
-        ctk.CTkLabel(f, text="Private Key:", font=ctk.CTkFont(weight="bold")).grid(
-            row=2, column=0, sticky="nw", padx=20, pady=(10, 0)
-        )
-        self._priv_text = ctk.CTkTextbox(
-            f, height=120, font=ctk.CTkFont(family="Courier", size=13),
-            fg_color=("white", "gray20"), border_width=1
-        )
-        self._priv_text.grid(row=2, column=1, sticky="ew", padx=(10, 20), pady=(10, 0))
-
-        # public key
-        ctk.CTkLabel(f, text="Public Key:", font=ctk.CTkFont(weight="bold")).grid(
-            row=3, column=0, sticky="nw", padx=20, pady=(20, 0)
-        )
-        self._pub_text = ctk.CTkTextbox(
-            f, height=100, font=ctk.CTkFont(family="Courier", size=13),
-            fg_color=("white", "gray20"), border_width=1
-        )
-        self._pub_text.grid(row=3, column=1, sticky="ew", padx=(10, 20), pady=(20, 0))
-
-        # save buttons + key info
-        info_row = ctk.CTkFrame(f, fg_color="transparent")
-        info_row.grid(row=4, column=1, sticky="w", padx=10, pady=20)
-        
         ctk.CTkButton(
-            info_row, text="\U0001f4be  Save Private", command=self._save_private,
-            width=130, fg_color="#d97706", hover_color="#b45309"
-        ).pack(side="left")
-        
-        ctk.CTkButton(
-            info_row, text="\U0001f4be  Save Public", command=self._save_public,
-            width=130
-        ).pack(side="left", padx=20)
-        
-        self._gen_info = ctk.CTkLabel(info_row, text="", font=ctk.CTkFont(size=12))
+            ctrl, text="⚙  Generate Keypair", command=self._on_generate,
+            width=160, height=34, font=ctk.CTkFont(size=13, weight="bold"),
+        ).pack(side="left", padx=16)
+
+        self._gen_info = ctk.CTkLabel(ctrl, text="", font=ctk.CTkFont(size=12))
         self._gen_info.pack(side="left")
 
-    # ---------- ② Load ----------
+        # ── Private Key ────────────────────────────────────────────────
+        priv_card = ctk.CTkFrame(parent, fg_color=("gray88", "gray17"), corner_radius=8)
+        priv_card.grid(row=1, column=0, sticky="nsew", padx=(0, 6), pady=(0, 10))
+        priv_card.columnconfigure(0, weight=1)
 
-    def _build_load_section(self) -> None:
-        f = ctk.CTkFrame(self, fg_color=("gray95", "gray13"), corner_radius=8)
-        f.grid(row=1, column=0, sticky="ew", padx=20, pady=10)
-        f.columnconfigure(1, weight=1)
+        hdr_priv = ctk.CTkFrame(priv_card, fg_color="transparent")
+        hdr_priv.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 4))
+        ctk.CTkLabel(hdr_priv, text="🔒", font=ctk.CTkFont(size=14)).pack(side="left")
+        ctk.CTkLabel(hdr_priv, text="  Private Key",
+                     font=ctk.CTkFont(size=13, weight="bold")).pack(side="left")
 
-        ctk.CTkLabel(f, text="\u2461  Load Keys", font=ctk.CTkFont(size=18, weight="bold")).grid(row=0, column=0, columnspan=3, sticky="w", padx=20, pady=(20, 10))
+        self._priv_text = ctk.CTkTextbox(
+            priv_card, height=140,
+            font=ctk.CTkFont(family="Courier", size=11),
+            fg_color=("white", "gray20"), border_width=1,
+            wrap="none",
+        )
+        self._priv_text.grid(row=1, column=0, sticky="ew", padx=12)
+
+        priv_btns = ctk.CTkFrame(priv_card, fg_color="transparent")
+        priv_btns.grid(row=2, column=0, sticky="w", padx=12, pady=(6, 12))
+        ctk.CTkButton(
+            priv_btns, text="💾  Save", command=self._save_private,
+            width=90, height=30, fg_color="#d97706", hover_color="#b45309",
+        ).pack(side="left")
+        ctk.CTkButton(
+            priv_btns, text="📋  Copy", command=self._copy_private,
+            width=80, height=30, fg_color="gray50", hover_color="gray40",
+        ).pack(side="left", padx=8)
+
+        # ── Public Key ─────────────────────────────────────────────────
+        pub_card = ctk.CTkFrame(parent, fg_color=("gray88", "gray17"), corner_radius=8)
+        pub_card.grid(row=1, column=1, sticky="nsew", padx=(6, 0), pady=(0, 10))
+        pub_card.columnconfigure(0, weight=1)
+
+        hdr_pub = ctk.CTkFrame(pub_card, fg_color="transparent")
+        hdr_pub.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 4))
+        ctk.CTkLabel(hdr_pub, text="🔓", font=ctk.CTkFont(size=14)).pack(side="left")
+        ctk.CTkLabel(hdr_pub, text="  Public Key",
+                     font=ctk.CTkFont(size=13, weight="bold")).pack(side="left")
+
+        self._pub_text = ctk.CTkTextbox(
+            pub_card, height=140,
+            font=ctk.CTkFont(family="Courier", size=11),
+            fg_color=("white", "gray20"), border_width=1,
+            wrap="none",
+        )
+        self._pub_text.grid(row=1, column=0, sticky="ew", padx=12)
+
+        pub_btns = ctk.CTkFrame(pub_card, fg_color="transparent")
+        pub_btns.grid(row=2, column=0, sticky="w", padx=12, pady=(6, 12))
+        ctk.CTkButton(
+            pub_btns, text="💾  Save", command=self._save_public,
+            width=90, height=30,
+        ).pack(side="left")
+        ctk.CTkButton(
+            pub_btns, text="📋  Copy", command=self._copy_public,
+            width=80, height=30, fg_color="gray50", hover_color="gray40",
+        ).pack(side="left", padx=8)
+
+    # ── Load panel ────────────────────────────────────────────────────
+
+    def _build_load_panel(self, parent: ctk.CTkFrame) -> None:
+        tip = ctk.CTkLabel(
+            parent,
+            text="Browse for .pem files on disk, or paste PEM content directly from clipboard.",
+            text_color="gray50", font=ctk.CTkFont(size=12), justify="left",
+        )
+        tip.grid(row=0, column=0, sticky="w", pady=(0, 12))
 
         # Private Load
-        ctk.CTkLabel(f, text="Private Key:", font=ctk.CTkFont(weight="bold")).grid(
-            row=1, column=0, sticky="w", padx=20, pady=10
-        )
         self._var_priv_path = ctk.StringVar()
-        ctk.CTkEntry(
-            f, textvariable=self._var_priv_path, state="readonly"
-        ).grid(row=1, column=1, sticky="ew", padx=10, pady=10)
-        
-        btn_priv = ctk.CTkFrame(f, fg_color="transparent")
-        btn_priv.grid(row=1, column=2, padx=(0, 20), pady=10)
-        ctk.CTkButton(btn_priv, text="Browse\u2026", width=80, command=self._browse_priv).pack(side="left")
-        ctk.CTkButton(btn_priv, text="Paste", width=70, fg_color="gray50", hover_color="gray40", command=self._paste_priv).pack(side="left", padx=(10, 0))
+        self._build_file_row(parent, row=1,
+                             label="🔒  Private Key File:",
+                             var=self._var_priv_path,
+                             browse_cmd=self._browse_priv,
+                             paste_cmd=self._paste_priv)
+
+        # Separator
+        ctk.CTkFrame(parent, height=1, fg_color=("gray80", "gray30")).grid(
+            row=2, column=0, sticky="ew", pady=12)
 
         # Public Load
-        ctk.CTkLabel(f, text="Public Key:", font=ctk.CTkFont(weight="bold")).grid(
-            row=2, column=0, sticky="w", padx=20, pady=(0, 20)
-        )
         self._var_pub_path = ctk.StringVar()
-        ctk.CTkEntry(
-            f, textvariable=self._var_pub_path, state="readonly"
-        ).grid(row=2, column=1, sticky="ew", padx=10, pady=(0, 20))
-        
-        btn_pub = ctk.CTkFrame(f, fg_color="transparent")
-        btn_pub.grid(row=2, column=2, padx=(0, 20), pady=(0, 20))
-        ctk.CTkButton(btn_pub, text="Browse\u2026", width=80, command=self._browse_pub).pack(side="left")
-        ctk.CTkButton(btn_pub, text="Paste", width=70, fg_color="gray50", hover_color="gray40", command=self._paste_pub).pack(side="left", padx=(10, 0))
+        self._build_file_row(parent, row=3,
+                             label="🔓  Public Key File:",
+                             var=self._var_pub_path,
+                             browse_cmd=self._browse_pub,
+                             paste_cmd=self._paste_pub)
 
-    # ---------- ③ Validate ----------
+    def _build_file_row(self, parent, row, label, var, browse_cmd, paste_cmd):
+        ctk.CTkLabel(parent, text=label,
+                     font=ctk.CTkFont(size=13, weight="bold")).grid(
+            row=row, column=0, sticky="w", pady=(0, 6))
 
-    def _build_validate_section(self) -> None:
-        f = ctk.CTkFrame(self, fg_color=("gray95", "gray13"), corner_radius=8)
-        f.grid(row=2, column=0, sticky="ew", padx=20, pady=(10, 30))
-        f.columnconfigure(1, weight=1)
+        inner = ctk.CTkFrame(parent, fg_color="transparent")
+        inner.grid(row=row + 1, column=0, sticky="ew", pady=(0, 4))
+        inner.columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(f, text="\u2462  Validate Keypair", font=ctk.CTkFont(size=18, weight="bold")).grid(row=0, column=0, columnspan=2, sticky="w", padx=20, pady=(20, 10))
+        ctk.CTkEntry(inner, textvariable=var, state="readonly").grid(
+            row=0, column=0, sticky="ew")
+        ctk.CTkButton(inner, text="Browse…", width=80,
+                      command=browse_cmd).grid(row=0, column=1, padx=(8, 0))
+        ctk.CTkButton(inner, text="Paste", width=70,
+                      fg_color="gray50", hover_color="gray40",
+                      command=paste_cmd).grid(row=0, column=2, padx=(8, 0))
 
-        # source selector
-        ctk.CTkLabel(f, text="Source:", font=ctk.CTkFont(weight="bold")).grid(
-            row=1, column=0, sticky="w", padx=20, pady=10
+    # ─── STEP 2: Validate ─────────────────────────────────────────────
+
+    def _build_validate_card(self) -> None:
+        card = StepCard(self, step=2, title="Validate Keypair")
+        card.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 24))
+        card.body.columnconfigure(0, weight=1)
+
+        desc = ctk.CTkLabel(
+            card.body,
+            text="Confirm that the private and public keys belong to the same RSA keypair.",
+            text_color="gray50", font=ctk.CTkFont(size=12),
         )
-        self._var_source = ctk.StringVar(value="generated")
-        source_row = ctk.CTkFrame(f, fg_color="transparent")
-        source_row.grid(row=1, column=1, sticky="w", padx=10, pady=10)
-        
-        ctk.CTkRadioButton(
-            source_row, text="Generated above",
-            variable=self._var_source, value="generated"
-        ).pack(side="left")
-        ctk.CTkRadioButton(
-            source_row, text="Loaded files",
-            variable=self._var_source, value="loaded"
-        ).pack(side="left", padx=20)
+        desc.grid(row=0, column=0, sticky="w", pady=(0, 12))
+
+        action = ctk.CTkFrame(card.body, fg_color="transparent")
+        action.grid(row=1, column=0, sticky="ew")
 
         ctk.CTkButton(
-            f, text="\u2705  Check Keys", command=self._on_validate,
-            width=150
-        ).grid(row=2, column=1, sticky="w", padx=10, pady=15)
+            action,
+            text="✅  Validate Keypair",
+            command=self._on_validate,
+            width=180, height=40,
+            font=ctk.CTkFont(size=13, weight="bold"),
+        ).pack(side="left")
 
-        self._var_result = ctk.StringVar(value="Ready")
+        self._var_result = ctk.StringVar(value="")
         self._result_label = ctk.CTkLabel(
-            f, textvariable=self._var_result,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            action,
+            textvariable=self._var_result,
+            font=ctk.CTkFont(size=13, weight="bold"),
         )
-        self._result_label.grid(row=3, column=1, sticky="w", padx=10, pady=(0, 20))
+        self._result_label.pack(side="left", padx=20)
+
+    # ===================== panel switcher =====================
+
+    def _on_source_change(self, value: str) -> None:
+        if "Generate" in value:
+            self._active_source = "generate"
+            self._load_panel.grid_remove()
+            self._gen_panel.grid(row=1, column=0, sticky="nsew")
+        else:
+            self._active_source = "load"
+            self._gen_panel.grid_remove()
+            self._load_panel.grid(row=1, column=0, sticky="nsew")
 
     # ===================== helpers =====================
 
@@ -189,31 +257,24 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
         except Exception:
             return ""
 
-    def _cleanup_temp_files(self) -> None:
-        for p in self._temp_files:
-            try:
-                os.unlink(p)
-            except Exception:
-                pass
-        self._temp_files.clear()
-
     def _write_temp_pem(self, content: str) -> str | None:
         if "BEGIN " not in content:
-            CTkMessagebox(title="Warning", message="Clipboard does not appear to contain a PEM key.", icon="warning")
+            CTkMessagebox(title="Warning",
+                          message="Clipboard does not appear to contain a PEM key.",
+                          icon="warning")
             return None
         try:
-            tmp = tempfile.NamedTemporaryFile(
-                suffix=".pem", delete=False, mode="w"
-            )
+            tmp = tempfile.NamedTemporaryFile(suffix=".pem", delete=False, mode="w")
             tmp.write(content)
             tmp.close()
             self._temp_files.append(tmp.name)
             return tmp.name
         except Exception as exc:
-            CTkMessagebox(title="Error", message=f"Failed to write temp key:\n{exc}", icon="cancel")
+            CTkMessagebox(title="Error",
+                          message=f"Failed to write temp key:\n{exc}", icon="cancel")
             return None
 
-    # ---------- generate ----------
+    # ── generate ──────────────────────────────────────────────────────
 
     def _on_generate(self) -> None:
         key_size = int(self._var_key_size.get())
@@ -224,15 +285,14 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
             self._pub_text.delete("1.0", tk.END)
             self._pub_text.insert("1.0", pub_pem)
             self._gen_info.configure(
-                text=f"\u2705 {key_size}-bit RSA pair generated",
+                text=f"✅  {key_size}-bit RSA keypair ready",
                 text_color=Color.SUCCESS,
             )
-            self._var_result.set("Ready")
-            self._result_label.configure(text_color=Color.FG)
+            self._var_result.set("")
             if self.app:
                 self.app.status(f"{key_size}-bit keypair generated", "success")
         except Exception as exc:
-            self._gen_info.configure(text=f"\u274c {exc}", text_color=Color.ERROR)
+            self._gen_info.configure(text=f"❌  {exc}", text_color=Color.ERROR)
             if self.app:
                 self.app.status("Keypair generation failed", "error")
 
@@ -246,12 +306,11 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
             defaultextension=".pem",
             filetypes=[("PEM files", "*.pem"), ("All files", "*.*")],
         )
-        if not path:
-            return
-        with open(path, "w") as f:
-            f.write(pem)
-        if self.app:
-            self.app.status(f"Private key saved to {path}", "success")
+        if path:
+            with open(path, "w") as f:
+                f.write(pem)
+            if self.app:
+                self.app.status(f"Private key saved → {path}", "success")
 
     def _save_public(self) -> None:
         pem = self._get_public_pem()
@@ -263,14 +322,31 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
             defaultextension=".pem",
             filetypes=[("PEM files", "*.pem"), ("All files", "*.*")],
         )
-        if not path:
-            return
-        with open(path, "w") as f:
-            f.write(pem)
-        if self.app:
-            self.app.status(f"Public key saved to {path}", "success")
+        if path:
+            with open(path, "w") as f:
+                f.write(pem)
+            if self.app:
+                self.app.status(f"Public key saved → {path}", "success")
 
-    # ---------- load ----------
+    def _copy_private(self) -> None:
+        pem = self._get_private_pem()
+        if pem:
+            self.clipboard_clear()
+            self.clipboard_append(pem)
+            self._gen_info.configure(text="📋  Private key copied", text_color=Color.SUCCESS)
+        else:
+            CTkMessagebox(title="Warning", message="Generate a keypair first.", icon="warning")
+
+    def _copy_public(self) -> None:
+        pem = self._get_public_pem()
+        if pem:
+            self.clipboard_clear()
+            self.clipboard_append(pem)
+            self._gen_info.configure(text="📋  Public key copied", text_color=Color.SUCCESS)
+        else:
+            CTkMessagebox(title="Warning", message="Generate a keypair first.", icon="warning")
+
+    # ── load ──────────────────────────────────────────────────────────
 
     def _browse_priv(self) -> None:
         path = filedialog.askopenfilename(
@@ -308,12 +384,10 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
         if tmp:
             self._var_pub_path.set(tmp)
 
-    # ---------- validate ----------
+    # ── validate ──────────────────────────────────────────────────────
 
     def _on_validate(self) -> None:
-        source = self._var_source.get()
-
-        if source == "generated":
+        if self._active_source == "generate":
             priv_pem = self._get_private_pem()
             pub_pem = self._get_public_pem()
         else:
@@ -321,7 +395,7 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
             pub_pem = self._read_file(self._var_pub_path.get())
 
         if not priv_pem or not pub_pem:
-            self._var_result.set("\u26a0  No keys available in the selected source")
+            self._var_result.set("⚠  No keys available in active panel")
             self._result_label.configure(text_color=Color.WARNING)
             return
 
@@ -329,26 +403,25 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
         pub_ok = KeyPairManager.validate_public_key(pub_pem)
 
         if not priv_ok and not pub_ok:
-            self._var_result.set("\u274c  Both keys are invalid PEM")
-            self._result_label.configure(text_color=Color.ERROR)
+            self._set_result("❌  Both keys are invalid PEM", Color.ERROR)
             return
         if not priv_ok:
-            self._var_result.set("\u274c  Private key is invalid")
-            self._result_label.configure(text_color=Color.ERROR)
+            self._set_result("❌  Private key is invalid PEM", Color.ERROR)
             return
         if not pub_ok:
-            self._var_result.set("\u274c  Public key is invalid")
-            self._result_label.configure(text_color=Color.ERROR)
+            self._set_result("❌  Public key is invalid PEM", Color.ERROR)
             return
 
         if KeyPairManager.verify_keypair(priv_pem, pub_pem):
             size = KeyPairManager.get_key_size(priv_pem)
-            self._var_result.set(f"\u2705  Keys match \u2014 {size}-bit RSA pair")
-            self._result_label.configure(text_color=Color.SUCCESS)
+            self._set_result(f"✅  Keys match — {size}-bit RSA pair", Color.SUCCESS)
             if self.app:
-                self.app.status(f"Keys validated: {size}-bit matching pair", "success")
+                self.app.status(f"Keys validated: {size}-bit pair", "success")
         else:
-            self._var_result.set("\u274c  Keys do NOT match \u2014 they are from different keypairs")
-            self._result_label.configure(text_color=Color.ERROR)
+            self._set_result("❌  Keys do NOT match — different keypairs", Color.ERROR)
             if self.app:
                 self.app.status("Keypair mismatch detected", "error")
+
+    def _set_result(self, text: str, color: str) -> None:
+        self._var_result.set(text)
+        self._result_label.configure(text_color=color)

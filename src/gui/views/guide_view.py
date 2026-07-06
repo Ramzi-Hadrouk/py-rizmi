@@ -26,7 +26,7 @@ class GuideView(ctk.CTkFrame):
         from pathlib import Path
         import re
 
-        readme_path = Path(__file__).resolve().parent.parent.parent.parent.parent / "README.md"
+        readme_path = Path(__file__).resolve().parent.parent.parent.parent / "README.md"
         guide_md = "No guide found."
 
         if readme_path.exists():
