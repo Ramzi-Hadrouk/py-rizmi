@@ -19,7 +19,7 @@
 4. [Quick Start](#quick-start)
 5. [GUI Usage Guide](#gui-usage-guide)
 6. [CLI Scripts](#cli-scripts)
-7. [Python API / Backend Integration](#python-api--backend-integration)
+7. [Integration Workflow](#integration-workflow--from-start-to-finish)
 8. [Testing](#testing)
 9. [Project Structure](#project-structure)
 10. [Contributing](#contributing)
@@ -197,109 +197,84 @@ section above.
 
 ---
 
-## Python API / Backend Integration
+## Integration Workflow — From Start to Finish
 
-You can use the core modules directly in any Python application.
+The recommended path is to use the **GUI** (`python main.py`) for interactive
+tasks and fall back to **CLI scripts** (`python scripts/...`) when you need
+to automate or work on a headless server.
 
-### Hardware Identifier
+### Step 1 — Generate an RSA Keypair
 
-```python
-from src.core.hwid import HardwareIdentifier
+**GUI (recommended):** Open the app → **Key Management** view → pick a key
+size → click **Generate** → **Save** both `.pem` files.
 
-# Get the current machine's HWID
-hwid = HardwareIdentifier.get_machine_id()
-
-# Verify a HWID against this machine
-is_match = HardwareIdentifier.verify(some_hwid)
+**CLI (headless/automation):**
+```bash
+python scripts/gen_keypair.py \
+  --private-out keys/private_key.pem \
+  --public-out keys/public_key.pem \
+  --key-size 2048
 ```
 
-### Keypair Management
+> 🔒 `private_key.pem` stays on your authoring machine — never ship it.
 
-```python
-from src.core.keypair import KeyPairManager
+### Step 2 — Get the Machine HWID
 
-# Generate in-memory
-priv_pem, pub_pem = KeyPairManager.generate_keypair()
+**Run this on the target machine** where the licensed app will be deployed.
 
-# Generate with custom key size
-priv_pem, pub_pem = KeyPairManager.generate_keypair(key_size=4096)
+**GUI (recommended):** Open the app → **Machine ID** view → click
+**Generate Machine ID** → **Copy HWID**.
 
-# Save to disk
-KeyPairManager.save_keypair("keys/private.pem", "keys/public.pem")
-
-# Load existing keys
-priv = KeyPairManager.load_private_key("keys/private.pem")
-pub = KeyPairManager.load_public_key("keys/public.pem")
-
-# Validate individual key format
-KeyPairManager.validate_private_key(priv_pem)   # True / False
-KeyPairManager.validate_public_key(pub_pem)      # True / False
-
-# Verify that a private and public key belong together
-KeyPairManager.verify_keypair(priv_pem, pub_pem)  # True / False
-
-# Get key size in bits
-KeyPairManager.get_key_size(priv_pem)             # 2048, 4096, or None
+**CLI (headless server):**
+```bash
+python scripts/get_machine_id.py
+# HWID (SHA-256): fb50b7767d233a9ecc952dd9c11760586b3bd1a40d6bfbec051a312f0b51c77c
 ```
 
-### License Payload
+Send this hash to your license author.
 
-```python
-from src.core.license_token import LicensePayload
+### Step 3 — Issue a License
 
-payload = LicensePayload(
-    client="MyApp",
-    license_id="lic-001",
-    hwid="<machine-hwid>",
-    features=["billing", "reports"],
-    max_clients=5,
-    mode="offline",
-)
-payload.set_auto_iat()
-payload.set_auto_exp(days=365)
+**GUI (recommended):** Open the app → **License Generation** view →
+select the private key, fill in the payload fields (including the HWID
+from Step 2), add features, set dates → **Generate License**.
 
-# Serialise / deserialise
-data = payload.to_dict()
-restored = LicensePayload.from_dict(data)
+**CLI (headless/automation):**
+```bash
+python scripts/issue_license.py \
+  --private-key keys/private_key.pem \
+  --output license.lic \
+  --client "Acme Corp" \
+  --license-id "deploy-001" \
+  --hwid "<paste-hwid-here>" \
+  --features billing reports \
+  --max-clients 10 \
+  --exp-days 365
 ```
 
-### Issue a License
+Deliver `public_key.pem` and `license.lic` to the developer integrating
+the app.
 
-```python
-from src.core.license_issuer import LicenseIssuer
-from src.core.license_token import LicensePayload
+### Step 4 — Integrate Validation Into Your App
 
-payload = LicensePayload(client="Acme", license_id="lic-001", hwid="...")
-payload.set_auto_iat()
-payload.set_auto_exp(365)
-
-issuer = LicenseIssuer.from_file("keys/private_key.pem")
-token = issuer.issue(payload)              # returns JWT string
-issuer.issue_to_file(payload, "license.lic")  # writes to file
-```
-
-### Validate a License
+The developer embeds `public_key.pem` and `license.lic` and validates
+at startup — no GUI or script needed here, just the Python API:
 
 ```python
 from src.core.license_validator import LicenseValidator
 
-validator = LicenseValidator.from_file("keys/public_key.pem")
+validator = LicenseValidator.from_file("path/to/public_key.pem")
 
-# Full validation (signature + expiry + HWID)
 try:
-    payload = validator.validate(token)
-    print(f"Valid license for {payload.client}")
+    payload = validator.validate("path/to/license.lic")
+    print(f"Licensed to {payload['client']}")
 except ValueError as e:
-    print(f"Validation failed: {e}")  # "expired", "tampered", "hwid_mismatch", etc.
-
-# Decode without validation (read-only viewer mode)
-data = validator.decode_token(token)
-print(data["features"])
+    print(f"License invalid: {e}")
 ```
 
-### Server-Side Drop-In
+### Step 5 — Server-Side Drop-In (Optional)
 
-For a deployment server, use the ready-made `backend` module:
+For apps with a validation server:
 
 ```python
 from backend.license_check import validate_license
@@ -308,8 +283,8 @@ try:
     payload = validate_license("/path/to/config/dir")
     # config dir must contain public_key.pem and license.lic
     print(payload["client"], payload["features"])
-except ValueError as exc:
-    print(f"License invalid: {exc}")
+except ValueError as e:
+    print(f"License invalid: {e}")
 ```
 
 ---
