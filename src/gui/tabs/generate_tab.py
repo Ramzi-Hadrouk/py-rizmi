@@ -54,11 +54,14 @@ class GenerateTab(ttk.Frame):
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
         )
-        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.create_window((0, 0), window=inner, anchor="nw", tags="inner")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+
+        # stretch inner frame to fill canvas width
+        canvas.bind("<Configure>", self._on_canvas_resize)
 
         self._build_key_section(inner)
         self._build_payload_section(inner)
@@ -223,6 +226,15 @@ class GenerateTab(ttk.Frame):
         ).pack(side="left")
 
     # ===================== toggles =====================
+
+    # ---------- canvas resize ----------
+
+    @staticmethod
+    def _on_canvas_resize(event: object) -> None:
+        canvas = event.widget
+        canvas.itemconfig("inner", width=event.width)
+
+    # ---------- iat / exp toggles ----------
 
     def _toggle_iat(self) -> None:
         self._iat_manual_entry.config(
