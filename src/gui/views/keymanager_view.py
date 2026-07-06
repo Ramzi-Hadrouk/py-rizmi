@@ -57,18 +57,19 @@ class KeyManagerTab(QWidget):
         self.btn_load_mode = QPushButton("📂  Load Existing Keys")
         
         # Style as segmented buttons
-        style = """
-            QPushButton {
-                background-color: #374151;
-                border: 1px solid #4b5563;
+        style = f"""
+            QPushButton {{
+                background-color: {Color.PANEL_BG};
+                border: 1px solid {Color.BORDER};
                 padding: 8px;
                 font-weight: bold;
-            }
-            QPushButton:checked {
-                background-color: %s;
+                color: {Color.FG_MUTED};
+            }}
+            QPushButton:checked {{
+                background-color: {Color.ACCENT};
                 color: white;
-            }
-        """ % Color.ACCENT
+            }}
+        """
         
         self.btn_gen_mode.setStyleSheet(style + "border-top-left-radius: 6px; border-bottom-left-radius: 6px;")
         self.btn_load_mode.setStyleSheet(style + "border-top-right-radius: 6px; border-bottom-right-radius: 6px;")
@@ -110,7 +111,7 @@ class KeyManagerTab(QWidget):
         # Controls
         ctrl = QHBoxLayout()
         lbl_size = QLabel("Key Size:")
-        lbl_size.setStyleSheet("font-weight: bold; color: #9ca3af;")
+        lbl_size.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
         ctrl.addWidget(lbl_size)
         
         self.combo_size = QComboBox()
@@ -181,7 +182,7 @@ class KeyManagerTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         
         lbl_tip = QLabel("Browse for .pem files on disk, or paste PEM content directly from clipboard.")
-        lbl_tip.setStyleSheet("color: #9ca3af;")
+        lbl_tip.setStyleSheet(f"color: {Color.FG_MUTED};")
         layout.addWidget(lbl_tip)
         
         def _make_load_row(title, attr_prefix):
@@ -208,7 +209,7 @@ class KeyManagerTab(QWidget):
         
         div = QFrame()
         div.setFixedHeight(1)
-        div.setStyleSheet("background-color: #374151;")
+        div.setStyleSheet(f"background-color: {Color.BORDER};")
         layout.addWidget(div)
         
         _make_load_row("🔓  Public Key File:", "pub")
@@ -225,7 +226,7 @@ class KeyManagerTab(QWidget):
         self.content_layout.addWidget(card)
         
         lbl_desc = QLabel("Confirm that the private and public keys belong to the same RSA keypair.")
-        lbl_desc.setStyleSheet("color: #9ca3af;")
+        lbl_desc.setStyleSheet(f"color: {Color.FG_MUTED};")
         card.body_layout.addWidget(lbl_desc)
         
         act_row = QHBoxLayout()

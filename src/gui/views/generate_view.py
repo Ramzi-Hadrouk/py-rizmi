@@ -55,7 +55,7 @@ class GenerateTab(QWidget):
         
         row = QHBoxLayout()
         lbl = QLabel("Private Key File:")
-        lbl.setStyleSheet("font-weight: bold; color: #9ca3af;")
+        lbl.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
         self.key_entry = QLineEdit()
         self.key_entry.setReadOnly(True)
         self.key_entry.setPlaceholderText("No key selected…")
@@ -68,7 +68,7 @@ class GenerateTab(QWidget):
         card.body_layout.addLayout(row)
         
         lbl_tip = QLabel("ℹ  Use the Key Management tab to generate and save a private key first.")
-        lbl_tip.setStyleSheet("color: #9ca3af; font-size: 11px;")
+        lbl_tip.setStyleSheet(f"color: {Color.FG_MUTED}; font-size: 11px;")
         card.body_layout.addWidget(lbl_tip)
         
     def _build_step2_identity(self) -> None:
@@ -129,7 +129,7 @@ class GenerateTab(QWidget):
             frm.setObjectName("Panel")
             l = QVBoxLayout(frm)
             lbl = QLabel(title)
-            lbl.setStyleSheet("font-weight: bold; font-size: 11px; color: #9ca3af;")
+            lbl.setStyleSheet(f"font-weight: bold; font-size: 11px; color: {Color.FG_MUTED};")
             l.addWidget(lbl)
             l.addWidget(widget)
             grid.addWidget(frm)
@@ -150,9 +150,9 @@ class GenerateTab(QWidget):
         # Server URL
         url_row = QHBoxLayout()
         lbl_url = QLabel("Server URL")
-        lbl_url.setStyleSheet("font-weight: bold; color: #9ca3af;")
+        lbl_url.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
         lbl_url_opt = QLabel("optional")
-        lbl_url_opt.setStyleSheet("font-size: 10px; color: #6b7280;")
+        lbl_url_opt.setStyleSheet(f"font-size: 10px; color: {Color.FG_MUTED};")
         url_row.addWidget(lbl_url)
         url_row.addWidget(lbl_url_opt)
         
@@ -163,7 +163,7 @@ class GenerateTab(QWidget):
         
         # Features
         lbl_feat = QLabel("Features")
-        lbl_feat.setStyleSheet("font-weight: bold; color: #9ca3af;")
+        lbl_feat.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
         card.body_layout.addWidget(lbl_feat)
         
         self.features_widget = DynamicListWidget(label="Feature")
@@ -189,14 +189,14 @@ class GenerateTab(QWidget):
             entry_days = None
             if has_days:
                 lbl_days = QLabel("days:")
-                lbl_days.setStyleSheet("color: #9ca3af;")
+                lbl_days.setStyleSheet(f"color: {Color.FG_MUTED};")
                 l.addWidget(lbl_days)
                 entry_days = QLineEdit("365")
                 entry_days.setFixedWidth(60)
                 l.addWidget(entry_days)
                 
             lbl_or = QLabel("  or pick a date:")
-            lbl_or.setStyleSheet("color: #9ca3af;")
+            lbl_or.setStyleSheet(f"color: {Color.FG_MUTED};")
             l.addWidget(lbl_or)
             
             picker = QDateEdit(QDate.currentDate())

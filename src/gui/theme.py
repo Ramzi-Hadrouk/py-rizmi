@@ -2,7 +2,7 @@
 import qdarktheme
 
 class Color:
-    """Color palette matching the dark modern design."""
+    """Color palette matching the light modern design."""
     ACCENT = "#2563eb"
     ACCENT_HOVER = "#1d4ed8"
     ACCENT_LIGHT = "#dbeafe"
@@ -14,16 +14,20 @@ class Color:
     WARNING = "#d97706"
     WARNING_HOVER = "#b45309"
     WARNING_LIGHT = "#fef3c7"
-    FG_MUTED = "#9ca3af"
+    
+    # Light mode specific colors
+    FG_MUTED = "#6b7280"       # gray-500
+    PANEL_BG = "#f3f4f6"       # gray-100
+    BORDER = "#e5e7eb"         # gray-200
+    SIDEBAR_BG = "#f9fafb"     # gray-50
+    SIDEBAR_HOVER = "#e5e7eb"  # gray-200
+    TEXT = "#111827"           # gray-900
 
 def apply_theme(app) -> None:
     """Apply the custom qdarktheme with our accent colors."""
     qdarktheme.setup_theme(
-        theme="dark",
+        theme="light",
         custom_colors={
-            "[dark]": {
-                "primary": Color.ACCENT,
-            },
             "[light]": {
                 "primary": Color.ACCENT,
             },
@@ -56,12 +60,12 @@ def get_base_stylesheet() -> str:
         font-size: 15px;
     }}
     QFrame#StepDivider {{
-        background-color: #374151; /* gray-700 */
+        background-color: {Color.BORDER};
     }}
     
     /* Utility panels */
     QFrame#Panel {{
-        background-color: #1f2937; /* gray-800 */
+        background-color: {Color.PANEL_BG};
         border-radius: 8px;
     }}
     """

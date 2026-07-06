@@ -40,7 +40,7 @@ class HWIDTab(QWidget):
             "Send this hash to your license issuer."
         )
         lbl_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl_desc.setStyleSheet("color: #9ca3af;")
+        lbl_desc.setStyleSheet(f"color: {Color.FG_MUTED};")
         center_layout.addWidget(lbl_desc)
         
         btn_gen = QPushButton("\U0001f5b4  Generate Machine ID")
@@ -74,7 +74,7 @@ class HWIDTab(QWidget):
         lbl_raw.setFixedWidth(120)
         lbl_raw.setStyleSheet("font-weight: bold;")
         self._raw_value = QLabel("\u2014")
-        self._raw_value.setStyleSheet("color: #9ca3af;")
+        self._raw_value.setStyleSheet(f"color: {Color.FG_MUTED};")
         raw_row.addWidget(lbl_raw)
         raw_row.addWidget(self._raw_value, stretch=1)
         res_layout.addLayout(raw_row)
@@ -113,7 +113,7 @@ class HWIDTab(QWidget):
         raw = HardwareIdentifier.get_raw_fingerprint()
         hwid = HardwareIdentifier.get_machine_id()
         self._raw_value.setText(raw)
-        self._raw_value.setStyleSheet("color: white;")
+        self._raw_value.setStyleSheet(f"color: {Color.TEXT};")
         self.hwid_entry.setText(hwid)
         self._status_label.setText("")
         

@@ -137,7 +137,7 @@ class ViewerTab(QWidget):
         
     def _add_form_row(self, key: str, value: str, is_mono: bool = False) -> None:
         lbl_k = QLabel(f"{key}:")
-        lbl_k.setStyleSheet("font-weight: bold; color: #9ca3af;")
+        lbl_k.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
         
         lbl_v = QLineEdit(value)
         lbl_v.setReadOnly(True)
@@ -202,7 +202,7 @@ class ViewerTab(QWidget):
             
             # Custom styled row for Expiry
             lbl_k = QLabel("Expires At:")
-            lbl_k.setStyleSheet("font-weight: bold; color: #9ca3af;")
+            lbl_k.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
             lbl_v = QLabel(exp_str)
             lbl_v.setStyleSheet(f"color: {exp_color}; font-weight: bold;")
             self.form_layout.addRow(lbl_k, lbl_v)

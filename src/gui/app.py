@@ -64,7 +64,7 @@ class LicenseToolApp(QMainWindow):
     def _build_sidebar(self) -> None:
         self.sidebar_frame = QFrame()
         self.sidebar_frame.setFixedWidth(220)
-        self.sidebar_frame.setStyleSheet("background-color: #1a1a1a; border-right: 1px solid #333;")
+        self.sidebar_frame.setStyleSheet(f"background-color: {Color.SIDEBAR_BG}; border-right: 1px solid {Color.BORDER};")
         
         sidebar_layout = QVBoxLayout(self.sidebar_frame)
         sidebar_layout.setContentsMargins(15, 30, 15, 20)
@@ -96,24 +96,24 @@ class LicenseToolApp(QMainWindow):
             btn = QPushButton(text)
             btn.setCheckable(True)
             btn.setFixedHeight(40)
-            btn.setStyleSheet("""
-                QPushButton {
+            btn.setStyleSheet(f"""
+                QPushButton {{
                     text-align: left;
                     padding-left: 15px;
                     border: none;
                     border-radius: 6px;
                     background-color: transparent;
-                    color: #d1d5db;
+                    color: {Color.TEXT};
                     font-size: 14px;
-                }
-                QPushButton:hover {
-                    background-color: #374151;
-                }
-                QPushButton:checked {
-                    background-color: #374151;
-                    color: #ffffff;
+                }}
+                QPushButton:hover {{
+                    background-color: {Color.SIDEBAR_HOVER};
+                }}
+                QPushButton:checked {{
+                    background-color: {Color.SIDEBAR_HOVER};
+                    color: {Color.ACCENT};
                     font-weight: bold;
-                }
+                }}
             """)
             btn.clicked.connect(lambda _, k=key: self.select_view(k))
             sidebar_layout.addWidget(btn)
@@ -130,7 +130,7 @@ class LicenseToolApp(QMainWindow):
         # Status
         self._status_label = QLabel()
         self._status_label.setWordWrap(True)
-        self._status_label.setStyleSheet("color: #9ca3af; font-size: 12px;")
+        self._status_label.setStyleSheet(f"color: {Color.FG_MUTED}; font-size: 12px;")
         sidebar_layout.addWidget(self._status_label)
 
     def _build_views(self) -> None:

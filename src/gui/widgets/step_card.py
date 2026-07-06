@@ -1,6 +1,7 @@
 """Reusable StepCard widget — numbered card with accent left stripe."""
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QLabel, QWidget
 from PyQt6.QtCore import Qt
+from ..theme import Color
 
 class StepCard(QFrame):
     """A card with a colored left-accent stripe, step number, title, divider,
@@ -17,7 +18,7 @@ class StepCard(QFrame):
         
         # Background frame to apply styling properly
         bg_frame = QFrame()
-        bg_frame.setStyleSheet("background-color: #1f2937; border-radius: 10px;") # gray-800
+        bg_frame.setStyleSheet(f"background-color: {Color.PANEL_BG}; border-radius: 10px;")
         bg_layout = QHBoxLayout(bg_frame)
         bg_layout.setContentsMargins(0, 0, 0, 0)
         bg_layout.setSpacing(0)
