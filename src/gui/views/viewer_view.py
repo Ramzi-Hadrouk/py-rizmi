@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QFileDialog, QScrollArea, QFrame, QMessageBox,
-    QFormLayout, QTextEdit
+    QFormLayout, QTextEdit, QSizePolicy
 )
 from PyQt6.QtCore import Qt
 
@@ -103,6 +103,8 @@ class ViewerTab(QWidget):
         
         # Form layout for easy key-value alignment
         self.form_widget = QWidget()
+        self.form_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.form_layout = QFormLayout(self.form_widget)
         self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         self.form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -115,9 +117,9 @@ class ViewerTab(QWidget):
         # JWT raw text
         self.jwt_text = QTextEdit()
         self.jwt_text.setReadOnly(True)
-        self.jwt_text.setFixedHeight(120)
+        self.jwt_text.setMinimumHeight(100)
         self.jwt_text.setStyleSheet(f"font-family: monospace; font-size: 11px; background-color: white; color: {Color.TEXT}; padding: 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
-        card.body_layout.addWidget(self.jwt_text)
+        card.body_layout.addWidget(self.jwt_text, stretch=1)
         
     def _browse_pub(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "Select Public Key", "", "PEM files (*.pem);;All files (*.*)")
