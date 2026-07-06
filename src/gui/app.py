@@ -6,6 +6,7 @@ from pathlib import Path
 from PIL import Image, ImageTk
 
 from .tabs.hwid_tab import HWIDTab
+from .tabs.keymanager_tab import KeyManagerTab
 from .tabs.generate_tab import GenerateTab
 from .tabs.viewer_tab import ViewerTab
 
@@ -57,6 +58,7 @@ class LicenseToolApp(tk.Tk):
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
 
         self.hwid_tab = HWIDTab(notebook)
+        self.keymanager_tab = KeyManagerTab(notebook)
         self.generate_tab = GenerateTab(
             notebook,
             get_hwid_cb=self.hwid_tab.get_hwid,
@@ -64,5 +66,6 @@ class LicenseToolApp(tk.Tk):
         self.viewer_tab = ViewerTab(notebook)
 
         notebook.add(self.hwid_tab, text="  1.  Machine ID  ")
-        notebook.add(self.generate_tab, text="  2.  License Generation  ")
-        notebook.add(self.viewer_tab, text="  3.  License Viewer  ")
+        notebook.add(self.keymanager_tab, text="  2.  Key Management  ")
+        notebook.add(self.generate_tab, text="  3.  License Generation  ")
+        notebook.add(self.viewer_tab, text="  4.  License Viewer  ")
