@@ -1,9 +1,26 @@
+# Keys & licenses (sensitive)
 keys/*.pem
 *.lic
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
 .pytest_cache/
 *.egg-info/
 dist/
 build/
+*.whl
+
+# Environment
 .env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
