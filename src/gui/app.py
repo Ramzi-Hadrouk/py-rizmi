@@ -1,10 +1,15 @@
 """Main application window — three-tab notebook."""
 import tkinter as tk
 from tkinter import ttk
+from pathlib import Path
+
+from PIL import Image, ImageTk
 
 from .tabs.hwid_tab import HWIDTab
 from .tabs.generate_tab import GenerateTab
 from .tabs.viewer_tab import ViewerTab
+
+LOGO_PATH = Path(__file__).resolve().parent.parent.parent / "media" / "logo.png"
 
 
 class LicenseToolApp(tk.Tk):
@@ -16,14 +21,35 @@ class LicenseToolApp(tk.Tk):
         self.geometry("820x760")
         self.minsize(720, 640)
 
+        self._set_icon()
         self._style()
+        self._build_logo()
         self._build_tabs()
+
+    def _set_icon(self) -> None:
+        try:
+            img = Image.open(LOGO_PATH)
+            self.iconphoto(True, ImageTk.PhotoImage(img))
+        except Exception:
+            pass
 
     def _style(self) -> None:
         style = ttk.Style()
         try:
             style.theme_use("clam")
         except tk.TclError:
+            pass
+
+    def _build_logo(self) -> None:
+        try:
+            img = Image.open(LOGO_PATH)
+            base_width = 200
+            w_percent = base_width / float(img.size[0])
+            h_size = int(float(img.size[1]) * w_percent)
+            img = img.resize((base_width, h_size), Image.Resampling.LANCZOS)
+            self._logo_img = ImageTk.PhotoImage(img)
+            ttk.Label(self, image=self._logo_img).pack(pady=(12, 0))
+        except Exception:
             pass
 
     def _build_tabs(self) -> None:
