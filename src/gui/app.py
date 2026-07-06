@@ -68,6 +68,12 @@ class LicenseToolApp(tk.Tk):
             w_percent = base_width / float(img.size[0])
             h_size = int(float(img.size[1]) * w_percent)
             img = img.resize((base_width, h_size), Image.Resampling.LANCZOS)
+
+            # composite alpha onto background colour so tkinter renders cleanly
+            bg_rgb = tuple(int(Color.BG.lstrip("#")[i:i+2], 16) for i in (0, 2, 4))
+            bg = Image.new("RGBA", img.size, (*bg_rgb, 255))
+            img = Image.alpha_composite(bg, img)
+
             self._logo_img = ImageTk.PhotoImage(img)
             ttk.Label(self, image=self._logo_img,
                       background=Color.BG).pack(pady=(Pad.LG, 0))
