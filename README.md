@@ -81,9 +81,45 @@ payload data anywhere in the codebase.
 ```bash
 # 1. Install dependencies (pip or uv)
 pip install -r requirements.txt
+```
 
-# 2. Launch the GUI
+You have **two ways** to use the toolkit:
+
+### 🖥️  GUI Mode
+
+Launch the full desktop application with sidebar navigation:
+
+```bash
 python main.py
+```
+
+All features — key generation, license issuance, viewer, and the
+integration guide — are accessible through the interface.
+
+### ⌨️  CLI Mode
+
+Use the headless scripts for automation or server-side workflows:
+
+```bash
+# Generate an RSA keypair
+python scripts/gen_keypair.py \
+  --private-out keys/private_key.pem \
+  --public-out keys/public_key.pem \
+  --key-size 2048
+
+# Get this machine's hardware fingerprint
+python scripts/get_machine_id.py
+
+# Issue a signed license file
+python scripts/issue_license.py \
+  --private-key keys/private_key.pem \
+  --output license.lic \
+  --client "Acme Corp" \
+  --license-id "deploy-001" \
+  --hwid "<paste-the-hwid-here>" \
+  --features billing reports \
+  --max-clients 10 \
+  --exp-days 365
 ```
 
 ---
