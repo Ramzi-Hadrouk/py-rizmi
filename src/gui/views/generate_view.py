@@ -254,7 +254,7 @@ class GenerateTab(ctk.CTkScrollableFrame):
             text="🔐  Generate License",
             command=self._on_generate,
             height=48, font=ctk.CTkFont(size=15, weight="bold"),
-            fg_color=Color.ACCENT, hover_color="#1d4ed8",
+            fg_color=Color.ACCENT, hover_color=Color.ACCENT_HOVER,
             corner_radius=8,
         ).grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
@@ -265,7 +265,7 @@ class GenerateTab(ctk.CTkScrollableFrame):
         ctk.CTkButton(
             sec, text="👁  Preview Payload (JSON)",
             command=self._on_preview,
-            height=34, fg_color="#d97706", hover_color="#b45309",
+            height=34, fg_color=Color.WARNING, hover_color=Color.WARNING_HOVER,
         ).pack(side="left")
         ctk.CTkButton(
             sec, text="🗑  Clear Form",

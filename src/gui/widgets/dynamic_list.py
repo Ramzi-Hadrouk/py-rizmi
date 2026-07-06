@@ -2,6 +2,7 @@
 import customtkinter as ctk
 import tkinter as tk
 from typing import List
+from ..theme import Color
 
 
 class DynamicListWidget(ctk.CTkFrame):
@@ -50,7 +51,7 @@ class DynamicListWidget(ctk.CTkFrame):
         btn = ctk.CTkButton(
             row_frame, text="\u2715", width=30,
             command=lambda r=row: self._remove_row(r),
-            fg_color="#dc2626", hover_color="#991b1b"
+            fg_color=Color.ERROR, hover_color=Color.ERROR_HOVER
         )
         btn.pack(side="left", padx=(10, 0))
 

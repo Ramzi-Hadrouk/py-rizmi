@@ -111,7 +111,7 @@ class KeyManagerTab(ctk.CTkScrollableFrame):
         priv_btns.grid(row=2, column=0, sticky="w", padx=12, pady=(6, 12))
         ctk.CTkButton(
             priv_btns, text="💾  Save", command=self._save_private,
-            width=90, height=30, fg_color="#d97706", hover_color="#b45309",
+            width=90, height=30, fg_color=Color.WARNING, hover_color=Color.WARNING_HOVER,
         ).pack(side="left")
         ctk.CTkButton(
             priv_btns, text="📋  Copy", command=self._copy_private,

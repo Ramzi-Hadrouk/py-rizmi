@@ -5,12 +5,15 @@ class Color:
     BG = "#f5f5f5"
     FG = "#1a1a1a"
     ACCENT = "#2563eb"       # blue-600
+    ACCENT_HOVER = "#1d4ed8" # blue-700
     ACCENT_LIGHT = "#dbeafe" # blue-100
     SUCCESS = "#16a34a"      # green-600
     SUCCESS_LIGHT = "#dcfce7"
     ERROR = "#dc2626"        # red-600
+    ERROR_HOVER = "#991b1b"  # red-800
     ERROR_LIGHT = "#fee2e2"
     WARNING = "#d97706"      # amber-600
+    WARNING_HOVER = "#b45309"# amber-700
     WARNING_LIGHT = "#fef3c7"
     DISABLED = "#9ca3af"
     BORDER = "#d1d5db"
