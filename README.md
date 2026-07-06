@@ -6,7 +6,7 @@
 
 <p align="center">
   Offline RSA-signed license issuance, validation, and viewing —<br>
-  with a four-tab tkinter GUI, CLI scripts, and a fully testable Python API.
+  with a PyQt6 GUI, CLI scripts, and a fully testable Python API.
 </p>
 
 ---
@@ -49,9 +49,11 @@ suitable for integration into any Python application or web backend.
   and save as a `.lic` file.
 - **License Validation** — Verify signature, expiration, and HWID match
   on any machine.
-- **Read-Only Viewer** — Decode and inspect any `.lic` file with the
+- **License Viewer** — Decode and inspect any `.lic` file with the
   matching public key — no private key needed.
-- **Four-Tab GUI** — Built with tkinter for cross-platform desktop use.
+- **Integration Guide** — In-app rendered README with Python API docs
+  and backend integration examples.
+- **PyQt6 GUI** — Sidebar-navigated desktop application for cross-platform use.
 - **CLI Scripts** — Headless issuance, key generation, and HWID retrieval
   for server-side automation.
 - **Backend Module** — Drop-in validation function for app-server integration.
@@ -63,7 +65,7 @@ suitable for integration into any Python application or web backend.
 
 ```
 core/     ← Pure Python. No GUI. 100% testable.
-gui/      ← tkinter widgets. Depends on core/.
+gui/      ← PyQt6 widgets. Depends on core/.
 scripts/  ← Thin CLI wrappers around core/.
 backend/  ← Server-side validation helper. Depends on core/.
 tests/    ← pytest suite. Imports only core/.
@@ -77,7 +79,7 @@ payload data anywhere in the codebase.
 ## Quick Start
 
 ```bash
-# 1. Install dependencies
+# 1. Install dependencies (pip or uv)
 pip install -r requirements.txt
 
 # 2. Launch the GUI
@@ -88,49 +90,51 @@ python main.py
 
 ## GUI Usage Guide
 
-The application opens a four-tab notebook window.
+The application opens a window with a **sidebar** on the left and a content
+area on the right. Click any navigation item to switch views.
 
-### Tab 1 — Machine ID
+### Machine ID
 
 1. Click **Generate Machine ID**.
 2. The raw fingerprint and SHA-256 hash are displayed.
 3. Click **Copy HWID** and send this hash to your license issuer.
 
-### Tab 2 — Key Management
+### Key Management
 
 Generate, load, and validate RSA keypairs.
 
 1. **① Generate Keypair** — Select key size (2048, 3072, or 4096) and click
    **Generate**. The private and public PEM are displayed in read-only text
-   areas. Use **Save Private Key** and **Save Public Key** to write them to
-   `.pem` files.
+   areas. Use **Save** and **Copy** to export or copy each key.
 2. **② Load Keys** — Browse for existing `.pem` files on disk, or **Paste**
-   PEM content from the clipboard (useful when receiving keys via email or
-   chat).
-3. **③ Validate Pair** — Click **Check Keys** to validate both PEMs and
-   confirm they belong to the same keypair. Result shows a success message
-   with key size or an error explaining the issue.
+   PEM content from the clipboard.
+3. **③ Validate Pair** — Click **Validate Keypair** to confirm both PEMs
+   belong together. Result shows key size or a mismatch error.
 
-### Tab 3 — License Generation
+### License Generation
 
-1. **① Signing Key** — Browse for an existing private key `.pem` file, or
-   click **Generate New Keypair** to create one.
+1. **① Signing Key** — Browse for an existing private key `.pem` file.
 2. **② License Payload** — Fill in every field:
    - Client / Deployment (required)
    - License ID (required)
-   - HWID (required — click **From Tab 1** to auto-fill)
+   - HWID (required — click **← Tab 1** to pull from Machine ID view)
    - Features (add/remove dynamically)
    - Max Clients, Mode, Server URL, Grace Days
    - Issued At (iat) and Expiration (exp) — auto or manual.
 3. Click **Preview Payload (JSON)** to inspect the data before signing.
 4. Click **Generate License** and save the `.lic` file.
 
-### Tab 4 — License Viewer
+### License Viewer
 
 1. Select the matching **public key** `.pem` file.
 2. Select the **license file** `.lic` to inspect.
 3. Click **Decode & View** — all fields are displayed read-only, along
    with expiry status and days remaining.
+
+### Integration Guide
+
+In-app rendered view of this README — Python API docs, CLI usage, and
+backend integration instructions.
 
 ---
 
@@ -328,17 +332,20 @@ py-rizmi/
 │   │   ├── license_token.py         # Token data model
 │   │   ├── license_issuer.py        # Token signing
 │   │   └── license_validator.py     # Token validation + decode
-│   ├── gui/                         # tkinter GUI
+│   ├── gui/                         # PyQt6 GUI
 │   │   ├── __init__.py
-│   │   ├── app.py                   # Main window
-│   │   ├── tabs/
+│   │   ├── app.py                   # Main window + sidebar
+│   │   ├── theme.py                 # Styling & theming
+│   │   ├── views/
 │   │   │   ├── __init__.py
-│   │   │   ├── hwid_tab.py          # Tab 1
-│   │   │   ├── keymanager_tab.py    # Tab 2
-│   │   │   ├── generate_tab.py      # Tab 3
-│   │   │   └── viewer_tab.py        # Tab 4
+│   │   │   ├── hwid_view.py         # Machine ID view
+│   │   │   ├── keymanager_view.py   # Key Management view
+│   │   │   ├── generate_view.py     # License Generation view
+│   │   │   ├── viewer_view.py       # License Viewer view
+│   │   │   └── guide_view.py        # Integration Guide view
 │   │   └── widgets/
 │   │       ├── __init__.py
+│   │       ├── step_card.py         # Numbered card widget
 │   │       └── dynamic_list.py      # Add/remove list widget
 │   └── utils/
 │       ├── __init__.py
