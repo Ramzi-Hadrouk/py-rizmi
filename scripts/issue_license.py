@@ -4,10 +4,10 @@ import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from src.core.license_issuer import LicenseIssuer
-from src.core.license_token import LicensePayload
+from core.license_issuer import LicenseIssuer
+from core.license_token import LicensePayload
 
 
 if __name__ == "__main__":

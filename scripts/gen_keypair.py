@@ -4,9 +4,9 @@ import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from src.core.keypair import KeyPairManager
+from core.keypair import KeyPairManager
 
 
 if __name__ == "__main__":

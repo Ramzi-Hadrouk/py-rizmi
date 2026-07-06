@@ -119,6 +119,7 @@ python scripts/issue_license.py \
   --hwid "<paste-the-hwid-here>" \
   --features billing reports \
   --max-clients 10 \
+  --grace-days 14 \
   --exp-days 365
 ```
 
@@ -131,13 +132,15 @@ area on the right. Click any navigation item to switch views.
 
 ### Machine ID
 
+Navigate to **Machine ID** in the sidebar, then:
+
 1. Click **Generate Machine ID**.
 2. The raw fingerprint and SHA-256 hash are displayed.
 3. Click **Copy HWID** and send this hash to your license issuer.
 
 ### Key Management
 
-Generate, load, and validate RSA keypairs.
+Navigate to **Key Management** in the sidebar. Generate, load, and validate RSA keypairs.
 
 1. **① Generate Keypair** — Select key size (2048, 3072, or 4096) and click
    **Generate**. The private and public PEM are displayed in read-only text
@@ -148,6 +151,8 @@ Generate, load, and validate RSA keypairs.
    belong together. Result shows key size or a mismatch error.
 
 ### License Generation
+
+Navigate to **License Generation** in the sidebar.
 
 1. **① Signing Key** — Browse for an existing private key `.pem` file.
 2. **② License Payload** — Fill in every field:
@@ -161,6 +166,8 @@ Generate, load, and validate RSA keypairs.
 4. Click **Generate License** and save the `.lic` file.
 
 ### License Viewer
+
+Navigate to **License Viewer** in the sidebar.
 
 1. Select the matching **public key** `.pem` file.
 2. Select the **license file** `.lic` to inspect.
@@ -176,44 +183,17 @@ backend integration instructions.
 
 ## CLI Scripts
 
-All scripts are in the `scripts/` directory.
-
-### Generate a Keypair
-
-```bash
-python scripts/gen_keypair.py \
-  --private-out keys/private_key.pem \
-  --public-out keys/public_key.pem \
-  --key-size 2048
-```
-
-### Get Machine HWID
-
-Run this on the target deployment machine:
+The three scripts in `scripts/` mirror the core features of the GUI.
+All three support `--help` to see available flags:
 
 ```bash
-python scripts/get_machine_id.py
-# Raw fingerprint: 00:1a:2b:3c:4d:5e-server-xyz-Linux
-# HWID (SHA-256): a1b2c3d4e5f6...
+python scripts/gen_keypair.py --help
+python scripts/get_machine_id.py --help
+python scripts/issue_license.py --help
 ```
 
-### Issue a License
-
-Run this on your license-authoring machine:
-
-```bash
-python scripts/issue_license.py \
-  --private-key keys/private_key.pem \
-  --output license.lic \
-  --client "Acme Corp" \
-  --license-id "deploy-001" \
-  --hwid "<paste the HWID here>" \
-  --features billing reports \
-  --max-clients 10 \
-  --mode offline \
-  --grace-days 14 \
-  --exp-days 365
-```
+Quick-start examples for each are shown in the [CLI Mode](#-cli-mode)
+section above.
 
 ---
 
@@ -339,6 +319,9 @@ except ValueError as exc:
 ```bash
 pip install -e ".[dev]"
 pytest -v
+
+# or with uv
+uv run pytest -v
 ```
 
 All 34 tests cover the core layer without any GUI dependencies.
