@@ -21,9 +21,10 @@
 6. [CLI Scripts](#cli-scripts)
 7. [Integration Workflow](#integration-workflow--from-start-to-finish)
 8. [Testing](#testing)
-9. [Project Structure](#project-structure)
-10. [Contributing](#contributing)
-11. [License](#license)
+9. [Building an Executable](#building-an-executable)
+10. [Project Structure](#project-structure)
+11. [Contributing](#contributing)
+12. [License](#license)
 
 ---
 
@@ -300,6 +301,48 @@ uv run pytest -v
 ```
 
 All 34 tests cover the core layer without any GUI dependencies.
+
+---
+
+## Building an Executable
+
+This project uses [Nuitka](https://nuitka.net) to compile the Python code
+into a standalone native executable for Linux or Windows.
+
+### Prerequisites
+
+```bash
+pip install nuitka
+
+# Linux: gcc / g++ must be installed
+sudo apt install gcc g++ python3-dev  # Debian / Ubuntu
+
+# Windows: Download and install MSVC from Visual Studio Build Tools
+```
+
+### Build
+
+```bash
+# Standalone folder (recommended — faster build, easier debugging)
+bash build.sh standalone
+
+# Single executable (longer build, larger file)
+bash build.sh onefile
+```
+
+Output goes to `dist/py-rizmi/`.
+
+> **Cross-platform note:** Build on each target OS separately.
+> Linux builds produce Linux binaries, Windows builds produce `.exe`.
+> Use GitHub Actions with matrix runners (ubuntu, windows) to automate this.
+
+### What Gets Bundled
+
+| Resource | How | Why |
+|----------|-----|-----|
+| `media/logo.png` | `--include-data-dir` | Window icon & in-app logo |
+| `README.md` | `--include-data-file` | Integration Guide view |
+| PyQt6, qdarktheme, markdown, PyJWT, cryptography | Auto-detected by Nuitka | Runtime dependencies |
 
 ---
 

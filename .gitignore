@@ -2,6 +2,11 @@
 keys/*.pem
 *.lic
 
+# Build output
+dist/
+*.build/
+*.onefile-build/
+
 # Python
 __pycache__/
 *.pyc
