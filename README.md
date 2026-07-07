@@ -5,8 +5,9 @@
 <h1 align="center">py-Rizmi Licensing</h1>
 
 <p align="center">
-  Offline RSA-signed license issuance, validation, and viewing —<br>
-  with a PyQt6 GUI, CLI scripts, and a fully testable Python API.
+  Offline software licensing toolkit using RSA-signed JWT tokens.<br>
+  Generate license keys, validate them against machine fingerprints (HWID),<br>
+  and manage the full lifecycle — via PyQt6 GUI, CLI scripts, or Python API.
 </p>
 
 ---
