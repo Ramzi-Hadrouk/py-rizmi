@@ -12,5 +12,4 @@ from core.hwid import HardwareIdentifier
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Print the machine hardware ID")
     parser.parse_args()
-    print("Raw fingerprint:", HardwareIdentifier.get_raw_fingerprint())
     print("HWID (SHA-256):", HardwareIdentifier.get_machine_id())
