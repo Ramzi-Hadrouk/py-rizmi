@@ -89,17 +89,17 @@ def license_issue(
         typer.Option("--output", "-o", help="Output path for the .lic file.", show_default=True),
     ] = Path("license.lic"),
     client: Annotated[
-        str,
+        Optional[str],
         typer.Option("--client", "-c", help="Client / company name."),
-    ] = ...,
+    ] = None,
     license_id: Annotated[
-        str,
+        Optional[str],
         typer.Option("--license-id", "-i", help="Unique license identifier."),
-    ] = ...,
+    ] = None,
     hwid: Annotated[
-        str,
+        Optional[str],
         typer.Option("--hwid", "-H", help="Target machine's hardware ID (from `rizmi machine-id`)."),
-    ] = ...,
+    ] = None,
     features: Annotated[
         Optional[List[str]],
         typer.Option("--features", "-f", help="Enabled feature flags (repeatable)."),
@@ -131,6 +131,17 @@ def license_issue(
     to the output file. Deliver the .lic together with your public key
     to the end user.
     """
+    # Validate required options (Optional[str] used for mypy compat; Typer shows them without defaults)
+    missing = [name for name, val in (("--client", client), ("--license-id", license_id), ("--hwid", hwid)) if val is None]
+    if missing:
+        _error(f"Missing required option(s): {', '.join(f'[bold]{m}[/]' for m in missing)}")
+        raise typer.Exit(1)
+
+    # Narrow types — safe after the check above
+    client_val: str = client  # type: ignore[assignment]
+    license_id_val: str = license_id  # type: ignore[assignment]
+    hwid_val: str = hwid  # type: ignore[assignment]
+
     if mode not in ("offline", "online"):
         _error(f'Invalid mode [bold]{mode!r}[/]. Choose "offline" or "online".')
         raise typer.Exit(1)
@@ -140,9 +151,9 @@ def license_issue(
         raise typer.Exit(1)
 
     payload = LicensePayload(
-        client=client,
-        license_id=license_id,
-        hwid=hwid,
+        client=client_val,
+        license_id=license_id_val,
+        hwid=hwid_val,
         features=list(features) if features else [],
         max_clients=max_clients,
         mode=mode,

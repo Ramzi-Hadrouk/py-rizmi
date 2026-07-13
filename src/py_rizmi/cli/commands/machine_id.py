@@ -34,7 +34,7 @@ def _copy_to_clipboard(text: str) -> bool:
             continue
     # Fallback: pyperclip if installed
     try:
-        import pyperclip  # type: ignore[import]
+        import pyperclip  # type: ignore[import-untyped]
         pyperclip.copy(text)
         return True
     except Exception:
