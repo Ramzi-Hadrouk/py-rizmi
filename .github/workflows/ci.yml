@@ -32,7 +32,7 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --extra dev --extra gui
-      - run: uv run pytest tests/unit tests/test_hwid.py tests/test_keypair.py tests/test_license_issuer.py tests/test_license_validator.py -v --tb=short
+      - run: uv run pytest -p no:qt tests/unit tests/test_hwid.py tests/test_keypair.py tests/test_license_issuer.py tests/test_license_validator.py -v --tb=short
       - run: uv run python -c "from py_rizmi import LicenseValidator; print('import ok')"
 
   full-tests:
@@ -45,6 +45,7 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --extra dev --extra gui
+      - run: sudo apt-get update && sudo apt-get install -y libegl1-mesa
       - name: Run full test suite
         env:
           QT_QPA_PLATFORM: offscreen
