@@ -66,3 +66,8 @@ ignore_errors = true
 markers = ["slow: slower integration/GUI/e2e tests"]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "twine>=6.2.0",
+]
