@@ -54,6 +54,14 @@ target-version = "py312"
 python_version = "3.12"
 strict = true
 
+[[tool.mypy.overrides]]
+module = ["qdarktheme", "markdown.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["py_rizmi.gui.*"]
+ignore_errors = true
+
 [tool.pytest.ini_options]
 markers = ["slow: slower integration/GUI/e2e tests"]
 testpaths = ["tests"]

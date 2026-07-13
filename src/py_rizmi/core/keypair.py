@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Tuple
 
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
+
 from .crypto import (
     generate_rsa_keypair,
     load_private_key as _load_priv,
@@ -83,6 +85,7 @@ class KeyPairManager:
     def get_key_size(pem_string: str) -> int | None:
         """Return the key size in bits, or None if the PEM is invalid."""
         try:
+            key: RSAPrivateKey | RSAPublicKey
             if "PRIVATE KEY" in pem_string or "RSA PRIVATE KEY" in pem_string:
                 key = _load_priv(pem_string)
             else:

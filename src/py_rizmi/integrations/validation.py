@@ -4,6 +4,7 @@ Drop this into app-server/config/ alongside public_key.pem and license.lic.
 """
 import logging
 import os
+from typing import Any
 
 from py_rizmi.core.license_validator import LicenseValidator
 
@@ -21,7 +22,7 @@ def get_public_key(config_dir: str) -> str:
         return f.read()
 
 
-def validate_license(config_dir: str) -> dict:
+def validate_license(config_dir: str) -> dict[str, Any]:
     """Validate license.lic in *config_dir*. Returns payload dict on success.
 
     Raises ValueError with one of: 'missing', 'expired', 'tampered',

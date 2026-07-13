@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import os
-from typing import Tuple
+from typing import Tuple, cast
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 
 
 def generate_rsa_keypair(key_size: int = 2048) -> Tuple[str, str]:
@@ -26,14 +27,14 @@ def generate_rsa_keypair(key_size: int = 2048) -> Tuple[str, str]:
     return private_pem, public_pem
 
 
-def load_private_key(pem: str):
+def load_private_key(pem: str) -> RSAPrivateKey:
     """Load a private key from PEM string. Returns cryptography key object."""
-    return serialization.load_pem_private_key(pem.encode(), password=None)
+    return cast(RSAPrivateKey, serialization.load_pem_private_key(pem.encode(), password=None))
 
 
-def load_public_key(pem: str):
+def load_public_key(pem: str) -> RSAPublicKey:
     """Load a public key from PEM string. Returns cryptography key object."""
-    return serialization.load_pem_public_key(pem.encode())
+    return cast(RSAPublicKey, serialization.load_pem_public_key(pem.encode()))
 
 
 def save_pem(pem: str, path: str) -> None:
