@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""CLI: Print the machine HWID (Task 4.3)."""
+"""CLI: Print the machine HWID."""
 import argparse
-import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-
-from core.hwid import HardwareIdentifier
+from py_rizmi.core.hwid import HardwareIdentifier
 
 
 if __name__ == "__main__":
