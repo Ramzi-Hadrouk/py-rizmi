@@ -1,5 +1,5 @@
-from src.core.license_issuer import LicenseIssuer
-from src.core.license_token import LicensePayload
+from py_rizmi.core.license_issuer import LicenseIssuer
+from py_rizmi.models.license_payload import LicensePayload
 
 
 def test_issue_returns_jwt_string(temp_keypair, sample_payload):

@@ -1,9 +1,9 @@
 """Shared pytest fixtures."""
 import pytest
 
-from src.core.keypair import KeyPairManager
-from src.core.license_token import LicensePayload
-from src.core.hwid import HardwareIdentifier
+from py_rizmi.core.keypair import KeyPairManager
+from py_rizmi.models.license_payload import LicensePayload
+from py_rizmi.core.hwid import HardwareIdentifier
 
 
 @pytest.fixture

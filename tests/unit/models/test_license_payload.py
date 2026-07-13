@@ -1,5 +1,5 @@
 import time
-from src.core.license_token import LicensePayload
+from py_rizmi.models.license_payload import LicensePayload
 
 
 def test_to_dict_has_all_fields():
