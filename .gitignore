@@ -29,6 +29,9 @@ venv/
 # hatch-vcs generated version
 src/py_rizmi/_version.py
 
+# Personal notes
+to-me/
+
 # OS
 .DS_Store
 Thumbs.db
