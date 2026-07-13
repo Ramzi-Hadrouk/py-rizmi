@@ -46,7 +46,7 @@ suitable for integration into any Python application or web backend.
 - **RSA Keypair Management** — Generate (2048/3072/4096-bit), load, paste,
   and validate RSA keypairs. Verify that private and public keys match.
 - **Machine Fingerprinting** — Deterministic SHA-256 hardware ID based on
-  MAC address, hostname, and OS.
+  the OS-level machine identifier.
 - **License Issuance** — Sign arbitrary payload fields into a JWT token
   and save as a `.lic` file.
 - **License Validation** — Verify signature, expiration, and HWID match
@@ -59,18 +59,19 @@ suitable for integration into any Python application or web backend.
 - **CLI Scripts** — Headless issuance, key generation, and HWID retrieval
   for server-side automation.
 - **Backend Module** — Drop-in validation function for app-server integration.
-- **Fully Tested** — 34 pytest tests covering all core logic.
+- **Fully Tested** — 36 pytest tests covering all core logic.
 
 ---
 
 ## Architecture
 
 ```
-core/     ← Pure Python. No GUI. 100% testable.
-gui/      ← PyQt6 widgets. Depends on core/.
-scripts/  ← Thin CLI wrappers around core/.
-backend/  ← Server-side validation helper. Depends on core/.
-tests/    ← pytest suite. Imports only core/.
+py_rizmi/core/       ← Pure Python. No GUI. 100% testable.
+py_rizmi/gui/        ← PyQt6 widgets. Depends on core/.
+py_rizmi/models/     ← LicensePayload dataclass with schema_version.
+py_rizmi/integrations/ ← Server-side validation helper.
+scripts/             ← Thin CLI wrappers around core/.
+tests/               ← pytest suite. Imports only core/.
 ```
 
 Every payload field is a bound input widget — there is zero hard-coded
@@ -81,8 +82,10 @@ payload data anywhere in the codebase.
 ## Quick Start
 
 ```bash
-# 1. Install dependencies (pip or uv)
-pip install -r requirements.txt
+# 1. Install dependencies
+pip install -e ".[gui]"    # with GUI support
+# or
+pip install -e ".[dev]"    # development only
 ```
 
 You have **two ways** to use the toolkit:
@@ -263,13 +266,13 @@ The developer embeds `public_key.pem` and `license.lic` and validates
 at startup — no GUI or script needed here, just the Python API:
 
 ```python
-from src.core.license_validator import LicenseValidator
+from py_rizmi.core.license_validator import LicenseValidator
 
 validator = LicenseValidator.from_file("path/to/public_key.pem")
 
 try:
     payload = validator.validate("path/to/license.lic")
-    print(f"Licensed to {payload['client']}")
+    print(f"Licensed to {payload.client}")
 except ValueError as e:
     print(f"License invalid: {e}")
 ```
@@ -279,7 +282,7 @@ except ValueError as e:
 For apps with a validation server:
 
 ```python
-from backend.license_check import validate_license
+from py_rizmi.integrations.validation import validate_license
 
 try:
     payload = validate_license("/path/to/config/dir")
@@ -294,14 +297,15 @@ except ValueError as e:
 ## Testing
 
 ```bash
+uv sync --extra dev
+uv run pytest -v
+
+# or with pip
 pip install -e ".[dev]"
 pytest -v
-
-# or with uv
-uv run pytest -v
 ```
 
-All 34 tests cover the core layer without any GUI dependencies.
+All 36 tests cover the core layer without any GUI dependencies.
 
 ---
 
@@ -352,59 +356,52 @@ Output goes to `dist/py-rizmi/`.
 ```
 py-rizmi/
 ├── main.py                          # GUI entry point
-├── requirements.txt
-├── pyproject.toml
-├── .gitignore
-├── README.md
+├── pyproject.toml                   # Hatchling + hatch-vcs build config
+├── build.sh                         # Nuitka build script
+├── .github/workflows/ci.yml         # CI: tests on every push
 ├── media/
 │   └── logo.png                     # Application logo
-├── config/
-│   ├── __init__.py
-│   └── settings.py                  # Central configuration
 ├── src/
-│   ├── __init__.py
-│   ├── core/                        # Pure logic — no GUI
-│   │   ├── __init__.py
-│   │   ├── hwid.py                  # Machine fingerprint
-│   │   ├── keypair.py               # RSA keypair management
-│   │   ├── license_token.py         # Token data model
-│   │   ├── license_issuer.py        # Token signing
-│   │   └── license_validator.py     # Token validation + decode
-│   ├── gui/                         # PyQt6 GUI
-│   │   ├── __init__.py
-│   │   ├── app.py                   # Main window + sidebar
-│   │   ├── theme.py                 # Styling & theming
-│   │   ├── views/
-│   │   │   ├── __init__.py
-│   │   │   ├── hwid_view.py         # Machine ID view
-│   │   │   ├── keymanager_view.py   # Key Management view
-│   │   │   ├── generate_view.py     # License Generation view
-│   │   │   ├── viewer_view.py       # License Viewer view
-│   │   │   └── guide_view.py        # Integration Guide view
-│   │   └── widgets/
-│   │       ├── __init__.py
-│   │       ├── step_card.py         # Numbered card widget
-│   │       └── dynamic_list.py      # Add/remove list widget
-│   └── utils/
+│   └── py_rizmi/
 │       ├── __init__.py
-│       └── logger.py
-├── scripts/                         # CLI versions
+│       ├── core/                    # Pure logic — no GUI
+│       │   ├── crypto.py            # RSA primitives
+│       │   ├── hwid.py              # Machine fingerprint
+│       │   ├── keypair.py           # RSA keypair management
+│       │   ├── license_issuer.py    # Token signing
+│       │   └── license_validator.py # Token validation + decode
+│       ├── models/
+│       │   └── license_payload.py   # LicensePayload dataclass
+│       ├── gui/                     # PyQt6 GUI
+│       │   ├── app.py               # Main window + sidebar
+│       │   ├── theme.py             # Styling & theming
+│       │   ├── views/
+│       │   │   ├── hwid_view.py     # Machine ID view
+│       │   │   ├── keymanager_view.py
+│       │   │   ├── generate_view.py
+│       │   │   ├── viewer_view.py
+│       │   │   └── guide_view.py
+│       │   └── widgets/
+│       │       ├── step_card.py
+│       │       └── dynamic_list.py
+│       ├── integrations/
+│       │   └── validation.py        # Server-side validation helper
+│       └── _internal/
+│           └── logging.py
+├── scripts/                         # CLI wrappers
 │   ├── gen_keypair.py
 │   ├── get_machine_id.py
 │   └── issue_license.py
-├── backend/                         # Server-side validation
-│   ├── __init__.py
-│   └── license_check.py
 ├── keys/                            # Generated keys (gitignored)
 │   └── .gitkeep
 └── tests/                           # pytest suite
-    ├── __init__.py
     ├── conftest.py
     ├── test_hwid.py
     ├── test_keypair.py
-    ├── test_license_token.py
     ├── test_license_issuer.py
-    └── test_license_validator.py
+    ├── test_license_validator.py
+    ├── unit/models/test_license_payload.py
+    └── gui/
 ```
 
 ---
@@ -417,7 +414,7 @@ Contributions are welcome and appreciated! Here's how you can help:
 
 1. Fork the repository.
 2. Create a feature branch: `git checkout -b feature/my-feature`.
-3. Install dev dependencies: `pip install -e ".[dev]"`.
+3. Install dev dependencies: `uv sync --extra dev`.
 4. Make your changes.
 5. Run the tests: `pytest -v` — all must pass.
 6. Commit with a clear message: `git commit -m "Add my feature"`.
@@ -425,7 +422,7 @@ Contributions are welcome and appreciated! Here's how you can help:
 
 ### Guidelines
 
-- Keep the **core layer pure** — no GUI or I/O imports in `src/core/`.
+- Keep the **core layer pure** — no GUI or I/O imports in `src/py_rizmi/core/`.
 - Add **tests** for any new functionality.
 - Follow existing code style (type annotations, no hard-coded strings in
   payload, dataclasses for models).
@@ -443,7 +440,6 @@ Contributions are welcome and appreciated! Here's how you can help:
 - Certificate Revocation List (CRL) support.
 - Tamper-evident audit log with rolling SHA-256 chains.
 - Key rotation via `key_id` in JWT headers.
-- Packaging as a distributable (`pip install`).
 
 ---
 
