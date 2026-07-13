@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="media/logo.png" alt="py-Rizmi Licensing" width="200"/>
+  <img src="media/logo.png" alt="py-Rizmi Licensing" width="100"/>
 </p>
 
 <h1 align="center">py-Rizmi Licensing</h1>
