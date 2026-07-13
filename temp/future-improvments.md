@@ -1,43 +1,8 @@
-# py-Rizmi — Final Implementation Plan (v2)
+# py-Rizmi — Final Implementation Plan
 
-**Status:** Reviewed, corrected, ready to execute
-**Scope:** Packaging & release engineering migration, v0.1.0 → v1.0.0, plus post-1.0 roadmap
-
----
-
-## What changed in this review pass
-
-The previous draft had three real ordering bugs. All three are fixed in this version:
-
-1. **Contract-test fixtures were scheduled after the refactor, which defeats their purpose.**
-   A `.lic` golden-file test is a regression guard for the migration. If you generate the
-   fixtures *after* you've already restructured the code, you're testing the new code
-   against itself — it can't catch anything. Fixed: fixture capture is now **Phase 1**,
-   before a single module moves. The formal pytest wrapper around those same fixtures still
-   comes later (Phase 6), but the fixtures themselves are frozen first.
-2. **CI didn't exist until Phase 7, so the entire restructure (Phase 2) happened with no
-   automated check.** Fixed: a minimal `ci.yml` (lint + existing test suite) now goes up in
-   Phase 1, before the restructure starts. Phase 7 expands it later; it doesn't create it
-   from nothing.
-3. **`pyproject.toml`, `scripts/*.py`, `main.py`, and `build.sh` all reference the old module
-   paths, and the previous plan didn't update them until much later (or, in `build.sh`'s
-   case, never).** A project in this state is unbuildable and unrunnable for the entire
-   restructure phase. Fixed: Phase 2 now bootstraps a minimal `pyproject.toml` *before*
-   moving any module (so editable installs keep resolving), and mechanically patches
-   `scripts/*.py`, `main.py`, and `build.sh` at the *end* of Phase 2 — so the project is
-   buildable and shippable at every phase boundary, not just at the very end of the plan.
-
-Two smaller additions worth knowing about before you start:
-
-- **Release now flows through TestPyPI before PyPI automatically**, gated by a required
-  human approval on the `pypi` GitHub Environment — not a separate manual process you have
-  to remember to run. See Phase 8 and Appendix B.
-- **PyPI's "pending" Trusted Publisher registration works before the project exists on PyPI
-  at all** — worth knowing so you don't accidentally fall back to a token-based upload just
-  to "create the project first." See Phase 8.1.
-
-The three corrections from the prior review (Python 3.11 EOL date, test-tree naming,
-GUI test coverage) are still in here, folded into Phase 0.
+**Status:** Ready to execute
+**Scope:** Packaging & release engineering migration, plus post-1.0 roadmap
+**Current library version:** `v1.0.0`
 
 ---
 
@@ -390,12 +355,108 @@ only the README and CONTRIBUTING.md, with no tribal knowledge required.
 - [ ] 10.6 **Dry-run the entire release pipeline on a release-candidate tag** (e.g. `v0.9.0`
       or `v1.0.0-rc1`) before cutting the real `v1.0.0` — confirm build → TestPyPI →
       (approval) → PyPI all work end-to-end on a tag you're comfortable yanking if something's
-      wrong.
-- [ ] 10.7 Tag `v1.0.0` for real. Approve the PyPI publish step. Verify the PEP 740
-      attestation appears (Phase 8.4).
+      wrong. Exact `git tag` / `gh release create` commands are in the **Version & Release
+      Management** section right after this phase — use its "release-candidate" recipe here.
+- [ ] 10.7 Tag `v1.0.0` for real (see the **Version & Release Management** section's "cutting
+      a normal release" recipe for the exact commands). Approve the PyPI publish step. Verify
+      the PEP 740 attestation appears (Phase 8.4). Once this lands, `v1.0.0` is the project's
+      current version — every release after this point (including all of Phase 11) follows
+      that same playbook.
 
 **Exit criterion:** `pip install py-rizmi` from a stranger's clean machine works, and
 `pip install py-rizmi[gui]` launches the GUI.
+
+---
+
+## Version & Release Management — Git Tags + `gh release`
+
+*This isn't a one-time phase — it's the standing playbook you reuse for every release from
+here on, starting the moment Phase 10.7 lands. The plan's Locked-in decisions already define
+the release **gate** (tag → build → TestPyPI → human approval → PyPI); this section is the
+actual commands that drive it, including the GitHub Release page itself, which nothing above
+creates automatically.*
+
+**Where this project stands right now:** current version is **`v1.0.0`**. Every example
+below assumes that tag already exists and `main` sits at that commit.
+
+### Versioning source of truth
+- hatch-vcs (Phase 2.1 / 3.7) derives `__version__` purely from the latest git tag reachable
+  from `HEAD`. Never hand-edit a version string anywhere in the codebase — if it's wrong,
+  the tag is wrong, not a file.
+- Tag format is `vMAJOR.MINOR.PATCH` (`v1.0.0`, `v1.0.1`, `v1.1.0`, …). Keep the `v` prefix —
+  `release.yml`'s trigger (`push: tags: ["v*"]`, Appendix B) matches on it.
+
+### What bump to use for what
+| Change | Bump | Example |
+|---|---|---|
+| Bug fix, no public-API or `.lic` format change | PATCH | `v1.0.0` → `v1.0.1` |
+| New feature, backward-compatible (e.g. Phase 11.1 key rotation) | MINOR | `v1.0.0` → `v1.1.0` |
+| Anything touching the `__all__` surface or `.lic` `schema_version` (per the Locked-in decisions table) | MAJOR | `v1.0.0` → `v2.0.0` |
+
+### Cutting a normal release (patch or minor) from `main`
+1. Confirm CI is green on `main`.
+2. Update `CHANGELOG.md` (Keep-a-Changelog format, Phase 9.3): move "Unreleased" into a new
+   `## [1.1.0] - 2026-07-13` heading. Commit: `git commit -m "Prepare release v1.1.0"`.
+3. Create an **annotated** tag — not lightweight; `gh release create --verify-tag` and
+   hatch-vcs both expect real tag metadata:
+   ```bash
+   git tag -a v1.1.0 -m "Release v1.1.0"
+   git push origin v1.1.0
+   ```
+4. The pushed tag triggers `release.yml`: build → auto-publish to TestPyPI → waits for the
+   required reviewer on the `pypi` Environment (Phase 8.3). Approve it in the Actions tab.
+5. Once `publish-pypi` succeeds, verify the PEP 740 attestation (Phase 8.4).
+6. Create the matching GitHub Release — the tag push alone does **not** do this:
+   ```bash
+   gh release create v1.1.0 \
+     --title "v1.1.0" \
+     --notes-file <(awk '/## \[1.1.0\]/{f=1;next}/## \[/{f=0}f' CHANGELOG.md) \
+     --verify-tag
+   ```
+   `--verify-tag` refuses to run if the tag isn't on the remote yet — catches a typo before
+   it becomes a public release.
+7. Optional: attach the Nuitka standalone binaries (see "Building an Executable" in the
+   README) once built per-OS:
+   ```bash
+   gh release upload v1.1.0 dist/py-rizmi-linux dist/py-rizmi-windows.exe
+   ```
+
+### Cutting a release-candidate (Phase 10.6's dry run)
+```bash
+git tag -a v1.0.0-rc1 -m "Release candidate v1.0.0-rc1"
+git push origin v1.0.0-rc1
+gh release create v1.0.0-rc1 \
+  --title "v1.0.0-rc1" \
+  --notes "Release candidate — dry run of the full release pipeline." \
+  --prerelease --verify-tag
+```
+`--prerelease` keeps it out of "Latest release," so an unpinned `pip install py-rizmi` can
+never accidentally resolve to an rc build.
+
+### Hotfix on an already-shipped version (Branching decision: `release/N.x`)
+If `v1.0.0` shipped, `main` has already moved on toward `v1.1.0`, but `v1.0.0` needs an
+urgent patch:
+```bash
+git checkout -b release/1.x v1.0.0
+git cherry-pick <sha-of-the-fix-from-main>
+git tag -a v1.0.1 -m "Release v1.0.1"
+git push origin release/1.x v1.0.1
+gh release create v1.0.1 --title "v1.0.1" --notes "Hotfix: <one-line summary>" --verify-tag
+```
+
+### Quick command reference
+| Task | Command |
+|---|---|
+| List existing tags, newest first | `git tag -l "v*" --sort=-v:refname` |
+| Show what a tag points to | `git show v1.0.0 --stat` |
+| Delete a bad tag before anyone's pulled it | `git tag -d v1.1.0 && git push origin :refs/tags/v1.1.0` |
+| List GitHub Releases | `gh release list` |
+| View a release | `gh release view v1.0.0` |
+| Edit release notes after the fact | `gh release edit v1.0.0 --notes-file CHANGELOG.md` |
+
+**Exit criterion:** you can go from "CHANGELOG updated" to "PyPI has the new version and
+GitHub shows a matching Release" using only the commands above — no manual step beyond the
+one required PyPI approval click.
 
 ---
 
