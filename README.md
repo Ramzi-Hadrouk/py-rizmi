@@ -5,9 +5,22 @@
 <h1 align="center">py-Rizmi Licensing</h1>
 
 <p align="center">
+  <a href="https://github.com/Ramzi-Hadrouk/py-rizmi/actions/workflows/ci.yml">
+    <img src="https://github.com/Ramzi-Hadrouk/py-rizmi/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
+  <a href="https://pypi.org/project/py-rizmi/">
+    <img src="https://img.shields.io/pypi/v/py-rizmi" alt="PyPI">
+  </a>
+  <img src="https://img.shields.io/pypi/pyversions/py-rizmi" alt="Python >=3.12">
+  <a href="https://github.com/Ramzi-Hadrouk/py-rizmi/blob/main/LICENSE">
+    <img src="https://img.shields.io/pypi/l/py-rizmi" alt="MIT">
+  </a>
+</p>
+
+<p align="center">
   Offline software licensing toolkit using RSA-signed JWT tokens.<br>
   Generate license keys, validate them against machine fingerprints (HWID),<br>
-  and manage the full lifecycle — via PyQt6 GUI, CLI scripts, or Python API.
+  and manage the full lifecycle — via PyQt6 GUI, CLI, or Python API.
 </p>
 
 ---
@@ -46,33 +59,42 @@ suitable for integration into any Python application or web backend.
 - **RSA Keypair Management** — Generate (2048/3072/4096-bit), load, paste,
   and validate RSA keypairs. Verify that private and public keys match.
 - **Machine Fingerprinting** — Deterministic SHA-256 hardware ID based on
-  the OS-level machine identifier.
+  the OS-level machine identifier. Pluggable via `FingerprintProvider` Protocol.
 - **License Issuance** — Sign arbitrary payload fields into a JWT token
-  and save as a `.lic` file.
+  and save as a `.lic` file with `schema_version` for future-proofing.
 - **License Validation** — Verify signature, expiration, and HWID match
   on any machine.
 - **License Viewer** — Decode and inspect any `.lic` file with the
   matching public key — no private key needed.
 - **Integration Guide** — In-app rendered README with Python API docs
   and backend integration examples.
+- **Public API** — Curated `__all__` surface (`LicenseValidator`,
+  `LicenseIssuer`, `KeyPair`, `MachineFingerprint`, `LicensePayload`)
+  covered by SemVer.
 - **PyQt6 GUI** — Sidebar-navigated desktop application for cross-platform use.
-- **CLI Scripts** — Headless issuance, key generation, and HWID retrieval
-  for server-side automation.
+- **CLI** — Headless issuance, key generation, validation, and HWID retrieval
+  via `rizmi` commands (Typer + Rich).
 - **Backend Module** — Drop-in validation function for app-server integration.
-- **Fully Tested** — 36 pytest tests covering all core logic.
+- **Fully Tested** — 36+ pytest tests with Hypothesis property tests, contract
+  tests, and ruff + mypy enforcement.
 
 ---
 
 ## Architecture
 
 ```
-py_rizmi/core/       ← Pure Python. No GUI. 100% testable.
-py_rizmi/gui/        ← PyQt6 widgets. Depends on core/.
-py_rizmi/models/     ← LicensePayload dataclass with schema_version.
-py_rizmi/integrations/ ← Server-side validation helper.
-scripts/             ← Thin CLI wrappers around core/.
-tests/               ← pytest suite. Imports only core/.
+py_rizmi/core/          ← Pure Python. No GUI. 100% testable.
+py_rizmi/models/        ← LicensePayload dataclass with schema_version.
+py_rizmi/integrations/  ← Server-side validation helper.
+py_rizmi/gui/           ← PyQt6 widgets. Depends on core/. Optional [gui] extra.
+py_rizmi/cli/           ← Typer CLI (rizmi command). Depends on core/.
+py_rizmi/_internal/     ← Private implementation — never import directly.
+scripts/                ← Deprecated CLI wrappers (use rizmi command instead).
+tests/                  ← pytest suite. Imports only core/.
 ```
+
+Fingerprint sources implement the `FingerprintProvider` Protocol, making
+the fingerprinting layer extensible without modifying core code.
 
 Every payload field is a bound input widget — there is zero hard-coded
 payload data anywhere in the codebase.
@@ -82,10 +104,15 @@ payload data anywhere in the codebase.
 ## Quick Start
 
 ```bash
-# 1. Install dependencies
-pip install -e ".[gui]"    # with GUI support
-# or
-pip install -e ".[dev]"    # development only
+# Recommended — with uv (uses the lockfile for reproducible installs)
+uv sync --extra dev          # development (core + test tools)
+uv sync --extra gui          # with GUI support
+uv sync --extra all          # everything
+
+# With pip (manually resolve dependencies)
+pip install py-rizmi          # core only
+pip install py-rizmi[gui]     # with GUI
+pip install -e ".[dev]"       # local development
 ```
 
 You have **two ways** to use the toolkit:
@@ -103,20 +130,20 @@ integration guide — are accessible through the interface.
 
 ### ⌨️  CLI Mode
 
-Use the headless scripts for automation or server-side workflows:
+The `rizmi` command (Typer + Rich) provides headless access to all features:
 
 ```bash
 # Generate an RSA keypair
-python scripts/gen_keypair.py \
+rizmi keys generate \
   --private-out keys/private_key.pem \
   --public-out keys/public_key.pem \
   --key-size 2048
 
 # Get this machine's hardware fingerprint
-python scripts/get_machine_id.py
+rizmi machine-id
 
 # Issue a signed license file
-python scripts/issue_license.py \
+rizmi license issue \
   --private-key keys/private_key.pem \
   --output license.lic \
   --client "Acme Corp" \
@@ -126,7 +153,14 @@ python scripts/issue_license.py \
   --max-clients 10 \
   --grace-days 14 \
   --exp-days 365
+
+# Validate and inspect a license
+rizmi license validate license.lic --public-key keys/public_key.pem
+rizmi license inspect license.lic --public-key keys/public_key.pem
 ```
+
+> **Legacy scripts:** The old `python scripts/*.py` wrappers still work
+> but are deprecated. Use the `rizmi` command instead.
 
 ---
 
@@ -186,26 +220,35 @@ backend integration instructions.
 
 ---
 
-## CLI Scripts
+## CLI Commands
 
-The three scripts in `scripts/` mirror the core features of the GUI.
-All three support `--help` to see available flags:
+The `rizmi` CLI is the recommended interface for headless operations.
+All commands support `--help`:
 
 ```bash
-python scripts/gen_keypair.py --help
-python scripts/get_machine_id.py --help
-python scripts/issue_license.py --help
+rizmi --help
+rizmi keys --help
+rizmi license --help
+rizmi machine-id --help
 ```
 
-Quick-start examples for each are shown in the [CLI Mode](#-cli-mode)
-section above.
+### Deprecated Scripts
+
+The old scripts in `scripts/` are frozen and will be removed in a future
+release. Migrate to the `rizmi` commands above:
+
+| Old script | New command |
+|---|---|
+| `python scripts/gen_keypair.py` | `rizmi keys generate` |
+| `python scripts/get_machine_id.py` | `rizmi machine-id` |
+| `python scripts/issue_license.py` | `rizmi license issue` |
 
 ---
 
 ## Integration Workflow — From Start to Finish
 
 The recommended path is to use the **GUI** (`python main.py`) for interactive
-tasks and fall back to **CLI scripts** (`python scripts/...`) when you need
+tasks and fall back to **CLI commands** (`rizmi ...`) when you need
 to automate or work on a headless server.
 
 ### Step 1 — Generate an RSA Keypair
@@ -215,7 +258,7 @@ size → click **Generate** → **Save** both `.pem` files.
 
 **CLI (headless/automation):**
 ```bash
-python scripts/gen_keypair.py \
+rizmi keys generate \
   --private-out keys/private_key.pem \
   --public-out keys/public_key.pem \
   --key-size 2048
@@ -232,7 +275,7 @@ python scripts/gen_keypair.py \
 
 **CLI (headless server):**
 ```bash
-python scripts/get_machine_id.py
+rizmi machine-id
 # HWID (SHA-256): fb50b7767d233a9ecc952dd9c11760586b3bd1a40d6bfbec051a312f0b51c77c
 ```
 
@@ -246,7 +289,7 @@ from Step 2), add features, set dates → **Generate License**.
 
 **CLI (headless/automation):**
 ```bash
-python scripts/issue_license.py \
+rizmi license issue \
   --private-key keys/private_key.pem \
   --output license.lic \
   --client "Acme Corp" \
@@ -266,7 +309,7 @@ The developer embeds `public_key.pem` and `license.lic` and validates
 at startup — no GUI or script needed here, just the Python API:
 
 ```python
-from py_rizmi.core.license_validator import LicenseValidator
+from py_rizmi import LicenseValidator
 
 validator = LicenseValidator.from_file("path/to/public_key.pem")
 
@@ -297,15 +340,22 @@ except ValueError as e:
 ## Testing
 
 ```bash
-uv sync --extra dev
+# Fast unit tests (no GUI dependencies)
+uv run pytest -p no:qt tests/unit -v
+
+# Full test suite (requires PyQt6 + system libEGL)
 uv run pytest -v
 
-# or with pip
-pip install -e ".[dev]"
+# Linting & type checking
+uv run ruff check .
+uv run mypy src
+
+# With pip (no lockfile)
+pip install -e ".[dev,gui]"
 pytest -v
 ```
 
-All 36 tests cover the core layer without any GUI dependencies.
+All core tests cover the public API without any GUI dependencies.
 
 ---
 
@@ -317,7 +367,8 @@ into a standalone native executable for Linux or Windows.
 ### Prerequisites
 
 ```bash
-pip install nuitka
+# Nuitka is a dev dependency
+uv sync --extra dev
 
 # Linux: gcc / g++ must be installed
 sudo apt install gcc g++ python3-dev  # Debian / Ubuntu
@@ -358,25 +409,32 @@ py-rizmi/
 ├── main.py                          # GUI entry point
 ├── pyproject.toml                   # Hatchling + hatch-vcs build config
 ├── build.sh                         # Nuitka build script
-├── .github/workflows/ci.yml         # CI: tests on every push
+├── CHANGELOG.md                     # Keep-a-Changelog
+├── CONTRIBUTING.md                  # Development guide
+├── docs/
+│   ├── api-stability.md             # SemVer policy
+│   └── adr/
+│       └── 0001-pyqt6-licensing.md  # Architecture Decision Record
+├── .github/workflows/ci.yml         # CI: lint + fast tests + full tests
 ├── media/
 │   └── logo.png                     # Application logo
 ├── src/
 │   └── py_rizmi/
-│       ├── __init__.py
+│       ├── __init__.py              # Public API (__all__)
+│       ├── _version.py              # hatch-vcs generated (gitignored)
 │       ├── core/                    # Pure logic — no GUI
 │       │   ├── crypto.py            # RSA primitives
-│       │   ├── hwid.py              # Machine fingerprint
+│       │   ├── hwid.py              # Machine fingerprint + FingerprintProvider Protocol
 │       │   ├── keypair.py           # RSA keypair management
 │       │   ├── license_issuer.py    # Token signing
 │       │   └── license_validator.py # Token validation + decode
 │       ├── models/
-│       │   └── license_payload.py   # LicensePayload dataclass
-│       ├── gui/                     # PyQt6 GUI
+│       │   └── license_payload.py   # LicensePayload dataclass with schema_version
+│       ├── gui/                     # PyQt6 GUI (optional [gui] extra)
 │       │   ├── app.py               # Main window + sidebar
 │       │   ├── theme.py             # Styling & theming
 │       │   ├── views/
-│       │   │   ├── hwid_view.py     # Machine ID view
+│       │   │   ├── hwid_view.py
 │       │   │   ├── keymanager_view.py
 │       │   │   ├── generate_view.py
 │       │   │   ├── viewer_view.py
@@ -386,9 +444,12 @@ py-rizmi/
 │       │       └── dynamic_list.py
 │       ├── integrations/
 │       │   └── validation.py        # Server-side validation helper
-│       └── _internal/
+│       ├── cli/                     # Typer CLI (rizmi command)
+│       │   ├── app.py
+│       │   └── commands/
+│       └── _internal/               # Private — never import directly
 │           └── logging.py
-├── scripts/                         # CLI wrappers
+├── scripts/                         # Legacy CLI wrappers (deprecated)
 │   ├── gen_keypair.py
 │   ├── get_machine_id.py
 │   └── issue_license.py
@@ -408,38 +469,21 @@ py-rizmi/
 
 ## Contributing
 
-Contributions are welcome and appreciated! Here's how you can help:
-
-### Getting Started
-
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/my-feature`.
-3. Install dev dependencies: `uv sync --extra dev`.
-4. Make your changes.
-5. Run the tests: `pytest -v` — all must pass.
-6. Commit with a clear message: `git commit -m "Add my feature"`.
-7. Push and open a Pull Request.
-
-### Guidelines
-
-- Keep the **core layer pure** — no GUI or I/O imports in `src/py_rizmi/core/`.
-- Add **tests** for any new functionality.
-- Follow existing code style (type annotations, no hard-coded strings in
-  payload, dataclasses for models).
-- Update the **README** if you add or change user-facing features.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide —
+setup, project layout, code style (ruff + mypy), testing, and the
+deprecation-shim pattern for public API changes.
 
 ### Reporting Issues
 
-- Use the GitHub issue tracker.
+- Use the [GitHub issue tracker](https://github.com/Ramzi-Hadrouk/py-rizmi/issues).
 - Include the full error output and steps to reproduce.
 - Mention your Python version and operating system.
 
 ### Ideas for Contributions
 
-- Online validation mode (server-side ping endpoint).
-- Certificate Revocation List (CRL) support.
-- Tamper-evident audit log with rolling SHA-256 chains.
-- Key rotation via `key_id` in JWT headers.
+See [Phase 11 in the roadmap](temp/future-improvments.md) for the planned
+post-1.0 features: key rotation, online validation, certificate revocation
+lists, and tamper-evident audit logs.
 
 ---
 
