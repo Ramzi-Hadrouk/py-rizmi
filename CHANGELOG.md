@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-07-13
+
+### Added
+- Full `rizmi` CLI (Typer + Rich) with three command groups:
+  - `rizmi keys generate` — generate RSA keypair with spinner and rich output
+  - `rizmi keys inspect` — inspect any PEM file (type, size, fingerprint)
+  - `rizmi keys verify` — verify a private/public key pair matches
+  - `rizmi license issue` — sign and issue a `.lic` file with payload table
+  - `rizmi license validate` — validate `.lic` against public key + HWID
+  - `rizmi license inspect` — decode `.lic` without HWID or expiry check
+  - `rizmi machine-id` — get HWID with `--raw` (pipe-friendly) and `--copy` flags
+- `rizmi --version` / `-V` flag with banner output.
+- Auto-creation of GitHub Release in the `release.yml` CI workflow.
+
+### Removed
+- `scripts/` directory (all three legacy scripts) — fully superseded by the `rizmi` CLI.
+
+---
+
 ## [1.0.0] - 2026-07-13
 
 ### Added

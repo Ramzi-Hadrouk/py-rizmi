@@ -32,7 +32,7 @@
 3. [Architecture](#architecture)
 4. [Quick Start](#quick-start)
 5. [GUI Usage Guide](#gui-usage-guide)
-6. [CLI Scripts](#cli-scripts)
+6. [CLI Reference](#cli-reference)
 7. [Integration Workflow](#integration-workflow--from-start-to-finish)
 8. [Testing](#testing)
 9. [Building an Executable](#building-an-executable)
@@ -89,7 +89,6 @@ py_rizmi/integrations/  ← Server-side validation helper.
 py_rizmi/gui/           ← PyQt6 widgets. Depends on core/. Optional [gui] extra.
 py_rizmi/cli/           ← Typer CLI (rizmi command). Depends on core/.
 py_rizmi/_internal/     ← Private implementation — never import directly.
-scripts/                ← Deprecated CLI wrappers (use rizmi command instead).
 tests/                  ← pytest suite. Imports only core/.
 ```
 
@@ -149,7 +148,7 @@ rizmi license issue \
   --client "Acme Corp" \
   --license-id "deploy-001" \
   --hwid "<paste-the-hwid-here>" \
-  --features billing reports \
+  --features billing --features reports \
   --max-clients 10 \
   --grace-days 14 \
   --exp-days 365
@@ -158,9 +157,6 @@ rizmi license issue \
 rizmi license validate license.lic --public-key keys/public_key.pem
 rizmi license inspect license.lic --public-key keys/public_key.pem
 ```
-
-> **Legacy scripts:** The old `python scripts/*.py` wrappers still work
-> but are deprecated. Use the `rizmi` command instead.
 
 ---
 
@@ -220,10 +216,10 @@ backend integration instructions.
 
 ---
 
-## CLI Commands
+## CLI Reference
 
-The `rizmi` CLI is the recommended interface for headless operations.
-All commands support `--help`:
+The `rizmi` CLI is the recommended interface for all headless operations.
+Every command supports `--help` / `-h`:
 
 ```bash
 rizmi --help
@@ -232,16 +228,55 @@ rizmi license --help
 rizmi machine-id --help
 ```
 
-### Deprecated Scripts
+### Key Management — `rizmi keys`
 
-The old scripts in `scripts/` are frozen and will be removed in a future
-release. Migrate to the `rizmi` commands above:
-
-| Old script | New command |
+| Command | Description |
 |---|---|
-| `python scripts/gen_keypair.py` | `rizmi keys generate` |
-| `python scripts/get_machine_id.py` | `rizmi machine-id` |
-| `python scripts/issue_license.py` | `rizmi license issue` |
+| `rizmi keys generate` | Generate a new RSA keypair (2048 / 3072 / 4096 bits) |
+| `rizmi keys inspect <key.pem>` | Show key type, size, and fingerprint |
+| `rizmi keys verify --private ... --public ...` | Verify a private/public key pair matches |
+
+### License Operations — `rizmi license`
+
+| Command | Description |
+|---|---|
+| `rizmi license issue` | Sign and write a `.lic` token file |
+| `rizmi license validate <file.lic>` | Validate signature, expiry, and HWID |
+| `rizmi license inspect <file.lic>` | Decode and display all payload fields |
+
+### Machine Fingerprint — `rizmi machine-id`
+
+```bash
+rizmi machine-id           # rich panel output
+rizmi machine-id --raw     # plain hash only (for piping)
+rizmi machine-id --copy    # copy to clipboard
+```
+
+### Full Example Workflow
+
+```bash
+# 1. Generate keys
+rizmi keys generate --private-out keys/private.pem --public-out keys/public.pem
+
+# 2. Get HWID of the target machine
+rizmi machine-id --raw
+
+# 3. Issue a license
+rizmi license issue \
+  --private-key keys/private.pem \
+  --output license.lic \
+  --client "Acme Corp" \
+  --license-id "deploy-001" \
+  --hwid "<hwid-from-step-2>" \
+  --features billing --features reports \
+  --exp-days 365
+
+# 4. Validate on the target machine
+rizmi license validate license.lic --public-key keys/public.pem
+
+# 5. Inspect a token (author side, no HWID check)
+rizmi license inspect license.lic --public-key keys/public.pem
+```
 
 ---
 
@@ -295,7 +330,7 @@ rizmi license issue \
   --client "Acme Corp" \
   --license-id "deploy-001" \
   --hwid "<paste-hwid-here>" \
-  --features billing reports \
+  --features billing --features reports \
   --max-clients 10 \
   --exp-days 365
 ```
@@ -415,7 +450,9 @@ py-rizmi/
 │   ├── api-stability.md             # SemVer policy
 │   └── adr/
 │       └── 0001-pyqt6-licensing.md  # Architecture Decision Record
-├── .github/workflows/ci.yml         # CI: lint + fast tests + full tests
+├── .github/workflows/
+│   ├── ci.yml                       # CI: lint + fast tests + full tests
+│   └── release.yml                  # Release: build → TestPyPI → PyPI → GitHub Release
 ├── media/
 │   └── logo.png                     # Application logo
 ├── src/
@@ -444,15 +481,14 @@ py-rizmi/
 │       │       └── dynamic_list.py
 │       ├── integrations/
 │       │   └── validation.py        # Server-side validation helper
-│       ├── cli/                     # Typer CLI (rizmi command)
-│       │   ├── app.py
+│       ├── cli/                     # rizmi CLI (Typer + Rich)
+│       │   ├── app.py               # Root app + help banner + --version
 │       │   └── commands/
+│       │       ├── keys.py          # keys generate / inspect / verify
+│       │       ├── license_cmd.py   # license issue / validate / inspect
+│       │       └── machine_id.py    # machine-id (--raw, --copy)
 │       └── _internal/               # Private — never import directly
 │           └── logging.py
-├── scripts/                         # Legacy CLI wrappers (deprecated)
-│   ├── gen_keypair.py
-│   ├── get_machine_id.py
-│   └── issue_license.py
 ├── keys/                            # Generated keys (gitignored)
 │   └── .gitkeep
 └── tests/                           # pytest suite
@@ -481,7 +517,7 @@ deprecation-shim pattern for public API changes.
 
 ### Ideas for Contributions
 
-See [Phase 11 in the roadmap](temp/future-improvments.md) for the planned
+See the [future improvements roadmap](temp/future-improvments.md) for planned
 post-1.0 features: key rotation, online validation, certificate revocation
 lists, and tamper-evident audit logs.
 
