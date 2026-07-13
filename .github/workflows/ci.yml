@@ -19,36 +19,32 @@ jobs:
       - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-      - run: uv sync --extra dev
+      - run: uv sync --extra dev --extra gui
       - run: uv run ruff check .
       - run: uv run mypy src
 
-  unit-tests:
-    name: Unit Tests
+  fast-tests:
+    name: Fast Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-      - name: Install dependencies
-        run: uv sync --extra dev
-      - name: Run unit tests
-        run: uv run pytest tests/unit tests/test_hwid.py tests/test_keypair.py tests/test_license_issuer.py tests/test_license_validator.py -v --tb=short
-      - name: Verify package import
-        run: uv run python -c "from py_rizmi import LicenseValidator; print('import ok')"
+      - run: uv sync --extra dev --extra gui
+      - run: uv run pytest tests/unit tests/test_hwid.py tests/test_keypair.py tests/test_license_issuer.py tests/test_license_validator.py -v --tb=short
+      - run: uv run python -c "from py_rizmi import LicenseValidator; print('import ok')"
 
   full-tests:
-    name: Full Test Suite
+    name: Full Suite (incl. GUI)
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests]
+    needs: [lint, fast-tests]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-      - name: Install dependencies (with GUI)
-        run: uv sync --extra dev --extra gui --extra gui-dev
+      - run: uv sync --extra dev --extra gui
       - name: Run full test suite
         env:
           QT_QPA_PLATFORM: offscreen
