@@ -3,7 +3,6 @@ import pytest
 
 from py_rizmi.core.license_issuer import LicenseIssuer
 from py_rizmi.core.license_validator import LicenseValidator
-from py_rizmi.core.hwid import HardwareIdentifier
 
 
 def _make_token(priv_path, payload):

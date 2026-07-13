@@ -1,5 +1,4 @@
 """Tab 2 — Keypair Management for PyQt6."""
-import os
 import tempfile
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
@@ -137,7 +136,7 @@ class KeyManagerTab(QWidget):
         def _make_pem_card(title, icon):
             frm = QFrame()
             frm.setObjectName("Panel")
-            l = QVBoxLayout(frm)
+            lay = QVBoxLayout(frm)
             
             hdr = QHBoxLayout()
             lbl_ico = QLabel(icon)
@@ -146,13 +145,13 @@ class KeyManagerTab(QWidget):
             hdr.addWidget(lbl_ico)
             hdr.addWidget(lbl_title)
             hdr.addStretch()
-            l.addLayout(hdr)
+            lay.addLayout(hdr)
             
             txt = QTextEdit()
             txt.setReadOnly(True)
             txt.setStyleSheet(f"font-family: monospace; font-size: 11px; background-color: white; color: {Color.TEXT}; padding: 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
             txt.setMinimumHeight(100)
-            l.addWidget(txt, stretch=1)
+            lay.addWidget(txt, stretch=1)
             
             btns = QHBoxLayout()
             btns.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -160,7 +159,7 @@ class KeyManagerTab(QWidget):
             btn_copy = QPushButton("📋  Copy")
             btns.addWidget(btn_save)
             btns.addWidget(btn_copy)
-            l.addLayout(btns)
+            lay.addLayout(btns)
             
             return frm, txt, btn_save, btn_copy
             

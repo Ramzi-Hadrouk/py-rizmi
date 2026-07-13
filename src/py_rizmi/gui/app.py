@@ -1,12 +1,11 @@
 """Main application window — Sidebar navigation with PyQt6."""
-import os
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, 
-    QLabel, QPushButton, QStackedWidget, QFrame, QSizePolicy
+    QLabel, QPushButton, QStackedWidget, QFrame
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QIcon, QPixmap, QFont
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 
 from .theme import Color, get_base_stylesheet
 

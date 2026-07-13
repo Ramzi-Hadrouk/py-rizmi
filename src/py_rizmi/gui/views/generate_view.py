@@ -129,11 +129,11 @@ class GenerateTab(QWidget):
         def _mini_card(title, widget):
             frm = QFrame()
             frm.setObjectName("Panel")
-            l = QVBoxLayout(frm)
+            layout = QVBoxLayout(frm)
             lbl = QLabel(title)
             lbl.setStyleSheet(f"font-weight: bold; font-size: 11px; color: {Color.FG_MUTED};")
-            l.addWidget(lbl)
-            l.addWidget(widget)
+            layout.addWidget(lbl)
+            layout.addWidget(widget)
             grid.addWidget(frm)
             return widget
             
@@ -182,36 +182,36 @@ class GenerateTab(QWidget):
         def _date_row(label, has_days=False):
             frm = QFrame()
             frm.setObjectName("Panel")
-            l = QHBoxLayout(frm)
+            lay = QHBoxLayout(frm)
             
             lbl_title = QLabel(label)
             lbl_title.setStyleSheet("font-weight: bold; font-size: 12px;")
-            l.addWidget(lbl_title)
+            lay.addWidget(lbl_title)
             
             chk_auto = QCheckBox("Auto")
             chk_auto.setChecked(True)
-            l.addWidget(chk_auto)
+            lay.addWidget(chk_auto)
             
             entry_days = None
             if has_days:
                 lbl_days = QLabel("days:")
                 lbl_days.setStyleSheet(f"color: {Color.FG_MUTED};")
-                l.addWidget(lbl_days)
+                lay.addWidget(lbl_days)
             entry_days = QLineEdit("365")
             entry_days.setFixedWidth(60)
             entry_days.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
-            l.addWidget(entry_days)
+            lay.addWidget(entry_days)
                 
             lbl_or = QLabel("  or pick a date:")
             lbl_or.setStyleSheet(f"color: {Color.FG_MUTED};")
-            l.addWidget(lbl_or)
+            lay.addWidget(lbl_or)
             
             picker = QDateEdit(QDate.currentDate())
             picker.setCalendarPopup(True)
             picker.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
             picker.setEnabled(False) # Auto is checked by default
-            l.addWidget(picker)
-            l.addStretch()
+            lay.addWidget(picker)
+            lay.addStretch()
             
             # Connect toggle
             chk_auto.toggled.connect(lambda checked: picker.setEnabled(not checked))
@@ -387,13 +387,13 @@ class GenerateTab(QWidget):
         dlg = QDialog(self)
         dlg.setWindowTitle("Payload Preview — JSON")
         dlg.resize(520, 480)
-        l = QVBoxLayout(dlg)
+        lay = QVBoxLayout(dlg)
         
         txt = QTextEdit()
         txt.setReadOnly(True)
         txt.setStyleSheet(f"font-family: monospace; font-size: 13px; background-color: white; color: {Color.TEXT}; padding: 8px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         txt.setPlainText(json.dumps(payload.to_dict(), indent=2))
-        l.addWidget(txt)
+        lay.addWidget(txt)
         
         dlg.exec()
         

@@ -1,6 +1,5 @@
 """Reusable StepCard widget — numbered card with accent left stripe."""
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QLabel, QWidget
-from PyQt6.QtCore import Qt
 from ..theme import Color
 
 class StepCard(QFrame):

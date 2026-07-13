@@ -1,4 +1,3 @@
-import pytest
 
 from py_rizmi.core.keypair import KeyPairManager
 

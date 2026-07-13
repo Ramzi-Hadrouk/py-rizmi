@@ -1,5 +1,4 @@
 """Tab 4 — Read-only License Viewer for PyQt6."""
-import json
 from datetime import datetime, timezone
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
