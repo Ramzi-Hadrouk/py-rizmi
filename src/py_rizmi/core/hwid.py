@@ -14,8 +14,22 @@ The OS-level machine ID is obtained from:
 - Windows: MachineGuid (registry) or Win32_ComputerSystemProduct.UUID
 """
 import hashlib
+from typing import Protocol, runtime_checkable
 
 import machineid
+
+
+@runtime_checkable
+class FingerprintProvider(Protocol):
+    """Protocol for pluggable machine-fingerprint backends.
+
+    Any class implementing ``get_machine_id() -> str`` and
+    ``verify(hwid: str) -> bool`` satisfies this protocol, enabling
+    third-party fingerprint sources without modifying core code.
+    """
+
+    def get_machine_id(self) -> str: ...
+    def verify(self, hwid: str) -> bool: ...
 
 
 class MachineIdError(RuntimeError):
