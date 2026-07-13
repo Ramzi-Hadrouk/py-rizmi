@@ -23,7 +23,6 @@ gui = ["PyQt6>=6.6", "pyqtdarktheme>=2.1.0", "markdown>=3.3.0"]
 dev = [
     "pytest>=8.0",
     "pytest-cov",
-    "pytest-qt",
     "pytest-mock",
     "pytest-xdist",
     "pytest-randomly",
@@ -32,7 +31,8 @@ dev = [
     "mypy",
     "nuitka>=4.1.3",
 ]
-all = ["py-rizmi[gui]"]
+gui-dev = ["pytest-qt"]
+all = ["py-rizmi[gui,gui-dev]"]
 
 [project.scripts]
 rizmi = "py_rizmi.cli.app:main"

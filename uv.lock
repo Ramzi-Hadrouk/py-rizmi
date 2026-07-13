@@ -524,6 +524,7 @@ all = [
     { name = "markdown" },
     { name = "pyqt6" },
     { name = "pyqtdarktheme" },
+    { name = "pytest-qt" },
 ]
 dev = [
     { name = "hypothesis" },
@@ -532,7 +533,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
-    { name = "pytest-qt" },
     { name = "pytest-randomly" },
     { name = "pytest-xdist" },
     { name = "ruff" },
@@ -541,6 +541,9 @@ gui = [
     { name = "markdown" },
     { name = "pyqt6" },
     { name = "pyqtdarktheme" },
+]
+gui-dev = [
+    { name = "pytest-qt" },
 ]
 
 [package.metadata]
@@ -560,14 +563,15 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "pytest-mock", marker = "extra == 'dev'" },
-    { name = "pytest-qt", marker = "extra == 'dev'" },
+    { name = "pytest-qt", marker = "extra == 'all'" },
+    { name = "pytest-qt", marker = "extra == 'gui-dev'" },
     { name = "pytest-randomly", marker = "extra == 'dev'" },
     { name = "pytest-xdist", marker = "extra == 'dev'" },
     { name = "rich", specifier = ">=13.0" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "typer", specifier = ">=0.12" },
 ]
-provides-extras = ["all", "dev", "gui"]
+provides-extras = ["all", "dev", "gui", "gui-dev"]
 
 [[package]]
 name = "pycparser"
