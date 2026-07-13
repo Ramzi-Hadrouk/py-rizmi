@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QDate
 
 from ...core.license_issuer import LicenseIssuer
-from ...core.license_token import LicensePayload
+from ...models.license_payload import LicensePayload
 from ..widgets.dynamic_list import DynamicListWidget
 from ..widgets.step_card import StepCard
 from ..theme import Color

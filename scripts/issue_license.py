@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""CLI: Issue a signed license token (Task 4.4)."""
+"""CLI: Issue a signed license token."""
 import argparse
-import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-
-from core.license_issuer import LicenseIssuer
-from core.license_token import LicensePayload
+from py_rizmi.core.license_issuer import LicenseIssuer
+from py_rizmi.models.license_payload import LicensePayload
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""License token signing / issuance (Task 4.4)."""
+"""License token signing / issuance."""
 from __future__ import annotations
 
 import logging
@@ -6,7 +6,7 @@ import os
 
 import jwt
 
-from .license_token import LicensePayload
+from py_rizmi.models.license_payload import LicensePayload
 
 logger = logging.getLogger("license")
 

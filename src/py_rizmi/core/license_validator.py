@@ -1,4 +1,4 @@
-"""License token validation and decoding (Task 4.5)."""
+"""License token validation and decoding."""
 from __future__ import annotations
 
 import logging
@@ -7,8 +7,8 @@ from typing import Any, Dict, Optional
 
 import jwt
 
-from .hwid import HardwareIdentifier
-from .license_token import LicensePayload
+from py_rizmi.core.hwid import HardwareIdentifier
+from py_rizmi.models.license_payload import LicensePayload
 
 logger = logging.getLogger("license")
 
@@ -26,21 +26,14 @@ class LicenseValidator:
         with open(public_key_path, "r") as f:
             return cls(f.read())
 
-    # ---------- decode (no expiry / hwid checks) ----------
-
     def decode_token(self, token: str) -> Dict[str, Any]:
-        """Decode a token *without* expiry or HWID checks.
-
-        Used by the read-only License Viewer tab.
-        """
+        """Decode a token *without* expiry or HWID checks."""
         return jwt.decode(
             token,
             self.public_key,
             algorithms=[self.ALGORITHM],
             options={"verify_exp": False},
         )
-
-    # ---------- full validation ----------
 
     def validate(
         self, token: str, check_hwid: bool = True

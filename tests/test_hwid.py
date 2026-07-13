@@ -4,7 +4,7 @@ from unittest.mock import patch
 import machineid
 import pytest
 
-from src.core.hwid import HardwareIdentifier, MachineIdError
+from py_rizmi.core.hwid import HardwareIdentifier, MachineIdError
 
 MOCK_GUID = "17A28A73-BEA9-4D4B-AF5B-03A5AAE9B92C"
 EXPECTED_HASH = "a31feb8315091cbf62f888a01c43e42d990f49719fb5bc9c07ac9afda73520eb"

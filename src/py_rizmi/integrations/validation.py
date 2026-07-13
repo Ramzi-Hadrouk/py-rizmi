@@ -1,18 +1,18 @@
-"""Server-side license validation module (Task 4.5).
+"""Server-side license validation module.
 
 Drop this into app-server/config/ alongside public_key.pem and license.lic.
 """
 import logging
 import os
 
-from src.core.license_validator import LicenseValidator
+from py_rizmi.core.license_validator import LicenseValidator
 
 logger = logging.getLogger("license")
 
 
 def current_hwid() -> str:
     """Convenience wrapper — kept for backward-compat with v5 scripts."""
-    from src.core.hwid import HardwareIdentifier
+    from py_rizmi.core.hwid import HardwareIdentifier
     return HardwareIdentifier.get_machine_id()
 
 

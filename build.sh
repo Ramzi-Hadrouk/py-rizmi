@@ -24,6 +24,7 @@ case "$MODE" in
         $NUITKA \
             --standalone \
             --enable-plugin=pyqt6 \
+            --include-package=py_rizmi \
             --include-package=pygments \
             --include-data-dir=media=media \
             --include-data-file=README.md=README.md \
@@ -53,6 +54,7 @@ case "$MODE" in
         $NUITKA \
             --onefile \
             --enable-plugin=pyqt6 \
+            --include-package=py_rizmi \
             --include-package=pygments \
             --include-data-dir=media=media \
             --include-data-file=README.md=README.md \

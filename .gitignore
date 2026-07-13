@@ -26,6 +26,9 @@ venv/
 .vscode/
 .idea/
 
+# hatch-vcs generated version
+src/py_rizmi/_version.py
+
 # OS
 .DS_Store
 Thumbs.db

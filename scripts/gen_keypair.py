@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""CLI: Generate an RSA signing keypair (Task 4.2)."""
+"""CLI: Generate an RSA signing keypair."""
 import argparse
-import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-
-from core.keypair import KeyPairManager
+from py_rizmi.core.keypair import KeyPairManager
 
 
 if __name__ == "__main__":

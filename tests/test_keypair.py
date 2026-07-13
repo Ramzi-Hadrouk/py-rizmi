@@ -1,6 +1,6 @@
 import pytest
 
-from src.core.keypair import KeyPairManager
+from py_rizmi.core.keypair import KeyPairManager
 
 
 def test_generate_returns_pem_strings():

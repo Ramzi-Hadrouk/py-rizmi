@@ -1,4 +1,4 @@
-"""License token data model (Task 4.1)."""
+"""License token data model."""
 from __future__ import annotations
 
 import time
@@ -14,6 +14,7 @@ class LicensePayload:
     bind input widgets dynamically — nothing is hard-coded.
     """
 
+    schema_version: int = 1
     client: str = ""
     license_id: str = ""
     hwid: str = ""
@@ -25,10 +26,9 @@ class LicensePayload:
     iat: int = 0
     exp: int = 0
 
-    # ---------- serialisation ----------
-
     def to_dict(self) -> Dict[str, Any]:
         return {
+            "schema_version": self.schema_version,
             "client": self.client,
             "license_id": self.license_id,
             "hwid": self.hwid,
@@ -44,6 +44,7 @@ class LicensePayload:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> LicensePayload:
         return cls(
+            schema_version=data.get("schema_version", 1),
             client=data.get("client", ""),
             license_id=data.get("license_id", ""),
             hwid=data.get("hwid", ""),
@@ -55,8 +56,6 @@ class LicensePayload:
             iat=data.get("iat", 0),
             exp=data.get("exp", 0),
         )
-
-    # ---------- convenience ----------
 
     def set_auto_iat(self) -> None:
         self.iat = int(time.time())

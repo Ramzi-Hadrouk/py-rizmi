@@ -26,4 +26,4 @@ jobs:
         run: uv run pytest -v
 
       - name: Verify package import
-        run: uv run python -c "from src.core.hwid import HardwareIdentifier; print('import ok')"
+        run: uv run python -c "from py_rizmi.core.hwid import HardwareIdentifier; print('import ok')"
