@@ -56,7 +56,7 @@ class LicenseValidator:
 
         payload = LicensePayload.from_dict(payload_dict)
 
-        if check_hwid and payload.hwid != HardwareIdentifier.get_machine_id():
+        if check_hwid and payload.hwid.lower() != HardwareIdentifier.get_machine_id().lower():
             logger.warning("License check failed: hwid_mismatch")
             raise ValueError("hwid_mismatch")
 
