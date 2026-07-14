@@ -47,11 +47,14 @@ uv run pytest --cov=py_rizmi --cov-report=term-missing
 
 ```
 tests/
-├── test_*.py          # Core unit tests (flat, legacy location)
-├── unit/models/       # Model unit tests
-├── gui/               # PyQt6 widget tests (require [gui] extra)
-└── e2e/               # End-to-end integration tests
-    └── test_no_extras_gui.py  # Guards the friendly-error path
+├── unit/
+│   ├── core/              # Core logic tests
+│   └── models/            # Model unit tests
+├── integration/           # Hypothesis property tests
+├── contract/              # Golden fixtures & compatibility
+├── regression/            # Bug reproducers (e.g. #42)
+├── gui/                   # PyQt6 widget tests (require [gui] extra)
+└── e2e/                   # End-to-end integration tests
 ```
 
 ## Code Style

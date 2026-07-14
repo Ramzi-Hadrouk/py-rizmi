@@ -75,8 +75,8 @@ suitable for integration into any Python application or web backend.
 - **CLI** — Headless issuance, key generation, validation, and HWID retrieval
   via `rizmi` commands (Typer + Rich).
 - **Backend Module** — Drop-in validation function for app-server integration.
-- **Fully Tested** — 40+ pytest tests with Hypothesis property tests, contract
-  tests, e2e tests, and ruff + mypy enforcement.
+- **Fully Tested** — 45+ pytest tests with Hypothesis property tests, contract
+  tests, regression tests, e2e tests, and ruff + mypy enforcement.
 
 ---
 
@@ -513,16 +513,15 @@ py-rizmi/
 │           └── logging.py
 ├── keys/                            # Generated keys (gitignored)
 │   └── .gitkeep
-└── tests/                           # pytest suite
-    ├── conftest.py
-    ├── test_hwid.py
-    ├── test_keypair.py
-    ├── test_license_issuer.py
-    ├── test_license_validator.py
-    ├── unit/models/test_license_payload.py
-    ├── e2e/
-    │   └── test_no_extras_gui.py    # Phase 5.2: friendly error path test
-    └── gui/
+└── tests/                           # comprehensive pytest suite
+    ├── unit/
+    │   ├── core/                      # Core cryptography unit tests
+    │   └── models/                    # Data model unit tests
+    ├── integration/                 # Hypothesis property tests
+    ├── contract/                    # Golden fixtures and compatibility checks
+    ├── regression/                  # Specific bug repro/regression tests
+    ├── e2e/                         # CLI execution smoke tests
+    └── gui/                         # PyQt6 widget and workflow tests
 ```
 
 ---
