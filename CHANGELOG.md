@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] - 2026-07-14
+
+### Added
+- Comprehensive test suite restructuring (Phase 6).
+- Golden fixtures and contract tests to ensure forward/backward license compatibility.
+- Hypothesis property tests for robust roundtrip issuance and signature mutation validation.
+- Weekly cross-platform matrix testing workflow for CI.
+
+### Fixed
+- Fixed Issue #42: HWID validation is now case-insensitive, preventing false rejections from manually copied hardware IDs.
+
+### Changed
+- CI workflow split into `fast-tests` (unit tests + coverage) and `slow-tests` (GUI/integration using `pytest-xdist`).
+
 ## [1.1.0] - 2026-07-14
 
 ### Added
