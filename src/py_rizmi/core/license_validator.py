@@ -50,6 +50,9 @@ class LicenseValidator:
         except jwt.InvalidSignatureError:
             logger.warning("License check failed: tampered")
             raise ValueError("tampered")
+        except jwt.InvalidAlgorithmError:
+            logger.warning("License check failed: invalid_algorithm")
+            raise ValueError("invalid_algorithm")
         except jwt.DecodeError as exc:
             logger.warning("License check failed: decode_error (%s)", exc)
             raise ValueError("decode_error")
