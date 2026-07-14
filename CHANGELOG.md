@@ -5,7 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+---
+
+## [1.1.0] - 2026-07-14
+
+### Added
+- `rizmi gui` CLI command — launches the PyQt6 desktop application directly
+  from the `rizmi` CLI. All GUI imports are deferred inside the command
+  function body so that a bare `pip install py-rizmi` (no `[gui]` extra)
+  never triggers a Qt import at module load time.
+- Friendly error message when `rizmi gui` is invoked without the `[gui]`
+  extra installed. Exit code `1`, output includes `pip install py-rizmi[gui]`.
+- `tests/e2e/test_no_extras_gui.py` — four tests that permanently guard the
+  no-extras friendly-error path (Phase 5.2 regression suite).
+
+### Changed
+- `main.py` updated to use a deferred-import guard matching the CLI command,
+  so `python main.py` also prints a clear install hint instead of a raw
+  `ModuleNotFoundError` when PyQt6 is not installed.
+- `cli/app.py` help table and `_print_help()` updated to include the `gui`
+  command with a `(requires [gui] extra)` note.
+
+---
+
 ## [1.0.1] - 2026-07-13
+
 
 ### Added
 - Full `rizmi` CLI (Typer + Rich) with three command groups:

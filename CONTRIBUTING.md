@@ -33,11 +33,25 @@ src/py_rizmi/
 # Fast unit tests only
 uv run pytest tests/unit -m "not slow"
 
+# e2e tests (simulates missing [gui] extra)
+uv run pytest tests/e2e -v
+
 # Full suite (including GUI, integration, contract tests)
 uv run pytest
 
 # With coverage
 uv run pytest --cov=py_rizmi --cov-report=term-missing
+```
+
+### Test Directory Layout
+
+```
+tests/
+├── test_*.py          # Core unit tests (flat, legacy location)
+├── unit/models/       # Model unit tests
+├── gui/               # PyQt6 widget tests (require [gui] extra)
+└── e2e/               # End-to-end integration tests
+    └── test_no_extras_gui.py  # Guards the friendly-error path
 ```
 
 ## Code Style
@@ -47,6 +61,15 @@ uv run pytest --cov=py_rizmi --cov-report=term-missing
 - **Type checking:** `uv run mypy src`
 
 All three must pass before submitting a pull request.
+
+## GUI Optional-Dependency Rule
+
+**Critical:** `py_rizmi.gui` and any `PyQt6` symbol must **never** be imported
+at the top level of `cli/app.py` or any module that is imported at CLI startup.
+All GUI imports must be deferred to inside the function body of the command that
+needs them. This is what keeps the `[gui]` extra genuinely optional.
+
+Violating this will be caught by the `tests/e2e/test_no_extras_gui.py` suite.
 
 ## Deprecation Policy
 

@@ -75,8 +75,8 @@ suitable for integration into any Python application or web backend.
 - **CLI** — Headless issuance, key generation, validation, and HWID retrieval
   via `rizmi` commands (Typer + Rich).
 - **Backend Module** — Drop-in validation function for app-server integration.
-- **Fully Tested** — 36+ pytest tests with Hypothesis property tests, contract
-  tests, and ruff + mypy enforcement.
+- **Fully Tested** — 40+ pytest tests with Hypothesis property tests, contract
+  tests, e2e tests, and ruff + mypy enforcement.
 
 ---
 
@@ -121,8 +121,20 @@ You have **two ways** to use the toolkit:
 Launch the full desktop application with sidebar navigation:
 
 ```bash
+# Recommended (installed package)
+rizmi gui
+
+# Alternative (run directly from repo)
 python main.py
 ```
+
+> **Requires the `[gui]` extra.** If not installed, `rizmi gui` will print a
+> friendly install hint instead of crashing. Install with:
+> ```bash
+> pip install py-rizmi[gui]
+> # or with uv:
+> uv sync --extra gui
+> ```
 
 All features — key generation, license issuance, viewer, and the
 integration guide — are accessible through the interface.
@@ -226,6 +238,7 @@ rizmi --help
 rizmi keys --help
 rizmi license --help
 rizmi machine-id --help
+rizmi gui --help
 ```
 
 ### Key Management — `rizmi keys`
@@ -251,6 +264,15 @@ rizmi machine-id           # rich panel output
 rizmi machine-id --raw     # plain hash only (for piping)
 rizmi machine-id --copy    # copy to clipboard
 ```
+
+### GUI — `rizmi gui`
+
+```bash
+rizmi gui                  # launch the PyQt6 desktop application
+```
+
+Requires the `[gui]` extra (`pip install py-rizmi[gui]`). Without it,
+the command exits with code `1` and prints a clear install hint.
 
 ### Full Example Workflow
 
@@ -282,7 +304,7 @@ rizmi license inspect license.lic --public-key keys/public.pem
 
 ## Integration Workflow — From Start to Finish
 
-The recommended path is to use the **GUI** (`python main.py`) for interactive
+The recommended path is to use **`rizmi gui`** (or `python main.py`) for interactive
 tasks and fall back to **CLI commands** (`rizmi ...`) when you need
 to automate or work on a headless server.
 
@@ -305,7 +327,7 @@ rizmi keys generate \
 
 **Run this on the target machine** where the licensed app will be deployed.
 
-**GUI (recommended):** Open the app → **Machine ID** view → click
+**GUI (recommended):** Open the app (`rizmi gui`) → **Machine ID** view → click
 **Generate Machine ID** → **Copy HWID**.
 
 **CLI (headless server):**
@@ -498,6 +520,8 @@ py-rizmi/
     ├── test_license_issuer.py
     ├── test_license_validator.py
     ├── unit/models/test_license_payload.py
+    ├── e2e/
+    │   └── test_no_extras_gui.py    # Phase 5.2: friendly error path test
     └── gui/
 ```
 
