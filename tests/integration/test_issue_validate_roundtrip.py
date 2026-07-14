@@ -1,12 +1,8 @@
 """Integration property tests ensuring robust issuance and validation."""
-import json
-import base64
-import time
 from unittest.mock import patch
 
 import pytest
 from hypothesis import given, strategies as st
-import jwt
 
 from py_rizmi.core.keypair import KeyPairManager
 from py_rizmi.core.license_issuer import LicenseIssuer

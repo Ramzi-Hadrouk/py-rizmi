@@ -1,6 +1,4 @@
 """Contract tests to ensure backward compatibility and schema evolution."""
-import json
-import base64
 from pathlib import Path
 from unittest.mock import patch
 
