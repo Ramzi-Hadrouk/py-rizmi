@@ -33,11 +33,10 @@ jobs:
           enable-cache: true
       - run: uv sync --extra dev --extra gui
       - run: sudo apt-get update && sudo apt-get install -y libegl1
-      - run: uv run pytest -p no:qt tests/unit tests/test_hwid.py tests/test_keypair.py tests/test_license_issuer.py tests/test_license_validator.py -v --tb=short
-      - run: uv run python -c "from py_rizmi import LicenseValidator; print('import ok')"
+      - run: uv run pytest tests/unit -m "not slow" -v --tb=short --cov=src/py_rizmi --cov-fail-under=80
 
-  full-tests:
-    name: Full Suite (incl. GUI)
+  slow-tests:
+    name: Slow Tests (Integration & GUI)
     runs-on: ubuntu-latest
     needs: [lint, fast-tests]
     steps:
@@ -50,4 +49,4 @@ jobs:
       - name: Run full test suite
         env:
           QT_QPA_PLATFORM: offscreen
-        run: uv run pytest -v --tb=short
+        run: uv run pytest tests/integration tests/contract tests/gui tests/e2e tests/regression -v --tb=short -n auto

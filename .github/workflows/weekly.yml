@@ -1,0 +1,33 @@
+name: Weekly Cross-Platform CI
+
+on:
+  schedule:
+    - cron: '0 3 * * 5'  # Every Friday at 03:00 UTC
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  matrix-tests:
+    name: Test on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.12", "3.13"]
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv sync --extra dev --extra gui
+      
+      # Install system dependencies for Linux
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1
+        
+      - name: Run full test suite
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: uv run pytest -v --tb=short -n auto
