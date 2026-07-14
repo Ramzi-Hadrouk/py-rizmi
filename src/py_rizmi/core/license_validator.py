@@ -56,6 +56,10 @@ class LicenseValidator:
 
         payload = LicensePayload.from_dict(payload_dict)
 
+        if payload.schema_version != 1:
+            logger.warning(f"License check failed: unsupported_schema ({payload.schema_version})")
+            raise ValueError("unsupported_schema")
+
         if check_hwid and payload.hwid.lower() != HardwareIdentifier.get_machine_id().lower():
             logger.warning("License check failed: hwid_mismatch")
             raise ValueError("hwid_mismatch")
