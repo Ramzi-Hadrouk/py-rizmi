@@ -64,9 +64,9 @@ def gui_command() -> None:  # noqa: D401
     """
     try:
         # Deferred imports — only resolved when this command is actually invoked.
-        from PyQt6.QtWidgets import QApplication  # type: ignore[import]
-        from py_rizmi.gui.app import LicenseToolApp  # type: ignore[import]
-        from py_rizmi.gui.theme import apply_theme  # type: ignore[import]
+        from PyQt6.QtWidgets import QApplication
+        from py_rizmi.gui.app import LicenseToolApp
+        from py_rizmi.gui.theme import apply_theme
     except ModuleNotFoundError as exc:
         err_console.print(
             Panel(
@@ -84,7 +84,7 @@ def gui_command() -> None:  # noqa: D401
 
     qt_app = QApplication(sys.argv)
     apply_theme(qt_app)
-    window = LicenseToolApp()
+    window = LicenseToolApp()  # type: ignore[no-untyped-call]
     window.show()
     sys.exit(qt_app.exec())
 
