@@ -2,9 +2,16 @@
 
 Usage:
     rizmi [OPTIONS] COMMAND [ARGS]...
+
+IMPORTANT — GUI import contract (Phase 5.3 audit, confirmed clean):
+    This module must NEVER import py_rizmi.gui or any PyQt6 symbol at the
+    module level. All GUI imports are deferred to inside the `gui` command
+    function body. This is what makes the [gui] optional-dependency actually
+    optional — a bare `pip install py-rizmi` must not pull in Qt.
 """
 from __future__ import annotations
 
+import sys
 from typing import Annotated, Optional
 
 import typer
@@ -23,6 +30,7 @@ from py_rizmi.cli.commands.license_cmd import app as license_app
 from py_rizmi.cli.commands.machine_id import app as machine_id_app
 
 console = Console()
+err_console = Console(stderr=True)
 
 # ─── root app ────────────────────────────────────────────────────────────────
 
@@ -39,6 +47,46 @@ app = typer.Typer(
 app.add_typer(keys_app,       name="keys",       help="RSA keypair generation and management.")
 app.add_typer(license_app,    name="license",    help="License file issuance, validation, and inspection.")
 app.add_typer(machine_id_app, name="machine-id", help="Get this machine's hardware fingerprint (HWID).")
+
+
+# ─── gui command ─────────────────────────────────────────────────────────────
+# NOTE: ALL PyQt6 / py_rizmi.gui imports are intentionally inside this function
+# body. Never hoist them to module scope — that would silently make PyQt6 a hard
+# dependency even for users who only pip-install the core library.
+
+@app.command("gui")
+def gui_command() -> None:  # noqa: D401
+    """Launch the py-Rizmi graphical interface.
+
+    Requires the [gui] optional dependency::
+
+        pip install py-rizmi[gui]
+    """
+    try:
+        # Deferred imports — only resolved when this command is actually invoked.
+        from PyQt6.QtWidgets import QApplication  # type: ignore[import]
+        from py_rizmi.gui.app import LicenseToolApp  # type: ignore[import]
+        from py_rizmi.gui.theme import apply_theme  # type: ignore[import]
+    except ModuleNotFoundError as exc:
+        err_console.print(
+            Panel(
+                "[bold red]GUI dependencies are not installed.[/]\n\n"
+                "Install them with:\n"
+                r"  [bold cyan]pip install py-rizmi\[gui][/]"
+                "\n\n"
+                f"[dim](Missing module: {exc.name})[/]",
+                title="[red]Missing optional extra[/]",
+                border_style="red",
+                padding=(1, 2),
+            )
+        )
+        raise typer.Exit(code=1)
+
+    qt_app = QApplication(sys.argv)
+    apply_theme(qt_app)
+    window = LicenseToolApp()
+    window.show()
+    sys.exit(qt_app.exec())
 
 
 # ─── version flag ─────────────────────────────────────────────────────────────
@@ -103,6 +151,8 @@ def _print_help() -> None:
     table.add_row("license inspect",  "Decode and inspect a .lic without HWID/expiry check")
     table.add_row("",                 "")
     table.add_row("machine-id",       "Print this machine's hardware fingerprint (HWID)")
+    table.add_row("",                 "")
+    table.add_row("gui",              "Launch the graphical interface [dim](requires [gui] extra)[/dim]")
 
     console.print(table)
     console.print(
