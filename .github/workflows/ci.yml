@@ -33,7 +33,7 @@ jobs:
           enable-cache: true
       - run: uv sync --extra dev --extra gui
       - run: sudo apt-get update && sudo apt-get install -y libegl1
-      - run: uv run pytest tests/unit -m "not slow" -v --tb=short --cov=src/py_rizmi --cov-fail-under=80
+      - run: uv run pytest tests/unit -m "not slow" -v --tb=short --cov=src/py_rizmi/core --cov=src/py_rizmi/models --cov-fail-under=90
 
   slow-tests:
     name: Slow Tests (Integration & GUI)
