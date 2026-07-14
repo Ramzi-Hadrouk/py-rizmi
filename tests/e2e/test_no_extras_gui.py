@@ -11,7 +11,6 @@ from __future__ import annotations
 import builtins
 from unittest.mock import patch
 
-import pytest
 from typer.testing import CliRunner
 
 from py_rizmi.cli.app import app
