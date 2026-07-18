@@ -16,6 +16,7 @@ def test_validate_valid(temp_keypair, sample_payload):
     token = _make_token(priv, sample_payload)
     result = LicenseValidator.from_file(str(pub)).validate(token)
     assert result.client == sample_payload.client
+    assert result.in_grace_period is False
 
 
 def test_validate_expired(temp_keypair, sample_payload):
@@ -50,6 +51,45 @@ def test_validate_grace_period_expired(temp_keypair, sample_payload):
     
     with pytest.raises(ValueError, match="expired"):
         LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
+
+
+def test_validate_expired_within_grace_period(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    sample_payload.grace_days = 14
+    sample_payload.iat = int(time.time()) - 1000
+    sample_payload.exp = int(time.time()) - 2 * 86_400  # expired 2 days ago
+    token = LicenseIssuer.from_file(str(priv)).issue(sample_payload)
+    result = LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
+    assert result.in_grace_period is True
+
+
+def test_validate_expired_past_grace_period(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    sample_payload.grace_days = 14
+    sample_payload.iat = int(time.time()) - 1000
+    sample_payload.exp = int(time.time()) - 20 * 86_400  # expired 20 days ago
+    token = LicenseIssuer.from_file(str(priv)).issue(sample_payload)
+    with pytest.raises(ValueError, match="expired"):
+        LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
+
+
+def test_validate_zero_grace_days_expires_immediately(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    sample_payload.grace_days = 0
+    sample_payload.iat = int(time.time()) - 1000
+    sample_payload.exp = int(time.time()) - 1  # expired 1 second ago
+    token = LicenseIssuer.from_file(str(priv)).issue(sample_payload)
+    with pytest.raises(ValueError, match="expired"):
+        LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
+
+
+def test_validate_not_expired_with_custom_grace(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    sample_payload.grace_days = 1
+    token = _make_token(priv, sample_payload)
+    result = LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
+    assert result.in_grace_period is False
+    assert result.grace_days == 1
 
 
 def test_validate_tampered(temp_keypair, sample_payload):

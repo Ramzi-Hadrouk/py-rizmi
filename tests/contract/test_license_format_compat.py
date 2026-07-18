@@ -34,6 +34,7 @@ def test_pre_migration_license_loads_correctly():
             assert payload.features == ["pro", "enterprise"]
             assert payload.max_clients == 50
             assert payload.schema_version == 1
+            assert payload.in_grace_period is False
 
 
 def test_schema_mismatch_raises_clear_error():
