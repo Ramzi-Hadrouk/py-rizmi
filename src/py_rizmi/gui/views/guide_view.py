@@ -1,5 +1,6 @@
 """Tab 5 — Integration Guide for PyQt6."""
 from pathlib import Path
+import importlib.resources
 
 import markdown as markdown_lib
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTextBrowser
@@ -95,23 +96,27 @@ class GuideView(QWidget):
         self._load_guide()
 
     def _load_guide(self) -> None:
-        project_root = Path(__file__).resolve().parent.parent.parent.parent
-        guide_path = project_root / "README.md"
-
-        if not guide_path.exists():
-            self.browser.setHtml(
-                MARKDOWN_CSS + "<h2>Guide not found</h2>"
-                "<p>Expected <code>README.md</code> in the project root.</p>"
-            )
-            return
-
         try:
-            md_text = guide_path.read_text(encoding="utf-8")
-        except Exception as exc:
-            self.browser.setHtml(
-                MARKDOWN_CSS + f"<h2>Error</h2><p>{exc}</p>"
-            )
-            return
+            # Try loading from the package resources (works when installed via pip)
+            ref = importlib.resources.files("py_rizmi") / "README.md"
+            md_text = ref.read_text(encoding="utf-8")
+        except Exception:
+            # Fallback for development mode
+            project_root = Path(__file__).resolve().parent.parent.parent.parent
+            guide_path = project_root / "README.md"
+            if not guide_path.exists():
+                self.browser.setHtml(
+                    MARKDOWN_CSS + "<h2>Guide not found</h2>"
+                    "<p>Expected <code>README.md</code> in the package or project root.</p>"
+                )
+                return
+            try:
+                md_text = guide_path.read_text(encoding="utf-8")
+            except Exception as exc:
+                self.browser.setHtml(
+                    MARKDOWN_CSS + f"<h2>Error</h2><p>{exc}</p>"
+                )
+                return
 
         html_body = markdown_lib.markdown(
             md_text,

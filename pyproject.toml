@@ -46,6 +46,9 @@ version-file = "src/py_rizmi/_version.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/py_rizmi"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"README.md" = "py_rizmi/README.md"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
