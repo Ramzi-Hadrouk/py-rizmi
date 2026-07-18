@@ -25,6 +25,7 @@ class LicensePayload:
     grace_days: int = 14
     iat: int = 0
     exp: int = 0
+    in_grace_period: bool = field(default=False, compare=False)
 
     def to_dict(self) -> Dict[str, Any]:
         return {

@@ -39,11 +39,17 @@ def _ts_to_human(ts: int) -> str:
     return dt.strftime("%Y-%m-%d %H:%M UTC")
 
 
-def _expiry_status(exp: int) -> Text:
+def _expiry_status(payload: LicensePayload) -> Text:
     now = int(time.time())
-    if exp == 0:
+    if payload.exp == 0:
         return Text("Never", style="dim")
-    days_left = (exp - now) // 86_400
+    
+    if payload.in_grace_period:
+        effective_exp = payload.exp + (payload.grace_days * 86_400)
+        grace_left = (effective_exp - now) // 86_400
+        return Text(f"⚠  Expired, in grace period ({grace_left} day(s) left)", style="bold yellow")
+
+    days_left = (payload.exp - now) // 86_400
     if days_left < 0:
         return Text(f"Expired {abs(days_left)} day(s) ago", style="bold red")
     if days_left <= 14:
@@ -72,7 +78,7 @@ def _payload_table(payload: LicensePayload) -> Table:
     table.add_row("Grace days", str(payload.grace_days))
     table.add_row("Issued at", _ts_to_human(payload.iat))
     table.add_row("Expires at", _ts_to_human(payload.exp))
-    table.add_row("Expiry", _expiry_status(payload.exp))
+    table.add_row("Expiry", _expiry_status(payload))
     return table
 
 

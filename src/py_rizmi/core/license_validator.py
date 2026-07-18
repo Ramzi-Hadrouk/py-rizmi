@@ -43,10 +43,8 @@ class LicenseValidator:
                 token,
                 self.public_key,
                 algorithms=[self.ALGORITHM],
+                options={"verify_exp": False},
             )
-        except jwt.ExpiredSignatureError:
-            logger.warning("License check failed: expired")
-            raise ValueError("expired")
         except jwt.InvalidSignatureError:
             logger.warning("License check failed: tampered")
             raise ValueError("tampered")
@@ -58,6 +56,17 @@ class LicenseValidator:
             raise ValueError("decode_error")
 
         payload = LicensePayload.from_dict(payload_dict)
+
+        if payload.exp != 0:
+            import time
+            now = int(time.time())
+            effective_exp = payload.exp + (payload.grace_days * 86_400)
+            if now > effective_exp:
+                logger.warning("License check failed: expired (grace period ended)")
+                raise ValueError("expired")
+            elif now > payload.exp:
+                logger.info("License is in grace period (%d days left)", (effective_exp - now) // 86_400 + 1)
+                payload.in_grace_period = True
 
         if payload.schema_version != 1:
             logger.warning(f"License check failed: unsupported_schema ({payload.schema_version})")

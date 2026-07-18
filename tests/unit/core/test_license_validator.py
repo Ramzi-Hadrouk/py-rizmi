@@ -22,7 +22,32 @@ def test_validate_expired(temp_keypair, sample_payload):
     priv, pub = temp_keypair
     sample_payload.iat = int(time.time()) - 1000
     sample_payload.exp = int(time.time()) - 100
+    sample_payload.grace_days = 0
     token = LicenseIssuer.from_file(str(priv)).issue(sample_payload)
+    with pytest.raises(ValueError, match="expired"):
+        LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
+
+
+def test_validate_grace_period_valid(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    now = int(time.time())
+    sample_payload.iat = now - 1000
+    sample_payload.exp = now - 86400  # Expired 1 day ago
+    sample_payload.grace_days = 2     # Grace period is 2 days
+    token = LicenseIssuer.from_file(str(priv)).issue(sample_payload)
+    
+    result = LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
+    assert result.in_grace_period is True
+
+
+def test_validate_grace_period_expired(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    now = int(time.time())
+    sample_payload.iat = now - 1000
+    sample_payload.exp = now - (3 * 86400)  # Expired 3 days ago
+    sample_payload.grace_days = 2           # Grace period was 2 days
+    token = LicenseIssuer.from_file(str(priv)).issue(sample_payload)
+    
     with pytest.raises(ValueError, match="expired"):
         LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
 
