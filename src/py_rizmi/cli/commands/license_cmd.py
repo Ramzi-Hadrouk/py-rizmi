@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.text import Text
 
 from py_rizmi.core.license_issuer import LicenseIssuer
-from py_rizmi.core.license_validator import LicenseValidator
+from py_rizmi.core.license_validator import ERROR_MESSAGES, LicenseValidator
 from py_rizmi.models.license_payload import LicensePayload
 
 app = typer.Typer(
@@ -234,21 +234,13 @@ def license_validate(
             _error(f"File not found: [bold]{p}[/]")
             raise typer.Exit(1)
 
-    _ERROR_MESSAGES = {
-        "expired": "License has expired.",
-        "tampered": "License signature is invalid — the token may have been tampered with.",
-        "decode_error": "Token could not be decoded. Check that the public key matches the issuing private key.",
-        "hwid_mismatch": "Hardware fingerprint mismatch — this license is not issued for this machine.",
-        "missing": "License file not found.",
-    }
-
     with console.status("[bold cyan]Validating license…[/]", spinner="dots"):
         try:
             validator = LicenseValidator.from_file(str(public_key))
             payload = validator.validate_from_file(str(license_path), check_hwid=not no_hwid_check)
         except ValueError as exc:
             reason = str(exc)
-            friendly = _ERROR_MESSAGES.get(reason, reason)
+            friendly = ERROR_MESSAGES.get(reason, reason)
             console.print()
             err_console.print(
                 Panel(

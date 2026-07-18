@@ -25,8 +25,9 @@ def get_public_key(config_dir: str) -> str:
 def validate_license(config_dir: str) -> dict[str, Any]:
     """Validate license.lic in *config_dir*. Returns payload dict on success.
 
-    Raises ValueError with one of: 'missing', 'expired', 'tampered',
-    'decode_error', 'hwid_mismatch'.
+    Raises ValueError with one of: 'missing', 'decode_error', 'tampered',
+    'invalid_algorithm', 'unsupported_schema', 'expired', 'hwid_mismatch'.
+    See py_rizmi.core.license_validator.ERROR_MESSAGES for human-readable text.
     """
     public_key = get_public_key(config_dir)
     license_path = os.path.join(config_dir, "license.lic")

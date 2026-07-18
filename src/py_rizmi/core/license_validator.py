@@ -11,6 +11,16 @@ from py_rizmi.models.license_payload import LicensePayload
 
 logger = logging.getLogger("license")
 
+ERROR_MESSAGES: dict[str, str] = {
+    "missing": "License file not found.",
+    "decode_error": "Token could not be decoded. Check that the public key matches the issuing private key.",
+    "tampered": "License signature is invalid — the token may have been tampered with.",
+    "invalid_algorithm": "License token uses an unsupported signing algorithm.",
+    "unsupported_schema": "License schema version is not supported by this version of py-Rizmi.",
+    "expired": "License has expired.",
+    "hwid_mismatch": "Hardware fingerprint mismatch — this license is not issued for this machine.",
+}
+
 
 class LicenseValidator:
     """Validates JWT license tokens against an RSA public key."""
