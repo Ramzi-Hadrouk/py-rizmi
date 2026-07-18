@@ -1,6 +1,7 @@
 """Tab 5 — Integration Guide for PyQt6."""
 from pathlib import Path
 import importlib.resources
+from typing import Any
 
 import markdown as markdown_lib
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTextBrowser
@@ -73,7 +74,7 @@ MARKDOWN_CSS = f"""
 class GuideView(QWidget):
     """View to display the integration guide from markdown.md."""
 
-    def __init__(self, app=None):
+    def __init__(self, app: Any = None) -> None:
         super().__init__()
         self.app = app
         self._build()
@@ -102,7 +103,7 @@ class GuideView(QWidget):
             md_text = ref.read_text(encoding="utf-8")
         except Exception:
             # Fallback for development mode
-            project_root = Path(__file__).resolve().parent.parent.parent.parent
+            project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
             guide_path = project_root / "README.md"
             if not guide_path.exists():
                 self.browser.setHtml(

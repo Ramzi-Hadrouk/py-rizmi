@@ -1,9 +1,10 @@
 """Tab 4 — Read-only License Viewer for PyQt6."""
 from datetime import datetime, timezone
+from typing import Any
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QFileDialog, QScrollArea, QFrame, QMessageBox,
-    QFormLayout, QTextEdit, QSizePolicy
+    QFormLayout, QTextEdit, QSizePolicy, QLayoutItem
 )
 from PyQt6.QtCore import Qt
 
@@ -14,7 +15,12 @@ from ..widgets.step_card import StepCard
 class ViewerTab(QWidget):
     """View and validate a license file using a public key."""
     
-    def __init__(self, app=None):
+    pub_entry: QLineEdit
+    lic_entry: QLineEdit
+    pub_btn: QPushButton
+    lic_btn: QPushButton
+
+    def __init__(self, app: Any = None) -> None:
         super().__init__()
         self.app = app
         self._build()
@@ -45,7 +51,7 @@ class ViewerTab(QWidget):
         card = StepCard(step=1, title="Select Files")
         self.content_layout.addWidget(card)
         
-        def _add_file_row(label, attr_prefix):
+        def _add_file_row(label: str, attr_prefix: str) -> None:
             row = QHBoxLayout()
             lbl = QLabel(label)
             lbl.setFixedWidth(120)
@@ -132,9 +138,9 @@ class ViewerTab(QWidget):
             
     def _clear_form(self) -> None:
         while self.form_layout.count():
-            item = self.form_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            item: QLayoutItem | None = self.form_layout.takeAt(0)
+            if item is not None and item.widget() is not None:
+                item.widget().deleteLater()  # type: ignore[union-attr]
         self.jwt_text.clear()
         
     def _add_form_row(self, key: str, value: str, is_mono: bool = False) -> None:

@@ -1,4 +1,5 @@
 """Tab 1 — Machine Hardware ID generation for PyQt6."""
+from typing import Any
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QCheckBox, QFrame, QApplication
@@ -11,7 +12,7 @@ from ..theme import Color
 class HWIDTab(QWidget):
     """Generate and copy the SHA-256 machine fingerprint."""
     
-    def __init__(self, app=None):
+    def __init__(self, app: Any = None) -> None:
         super().__init__()
         self.app = app
         self._build()
@@ -124,7 +125,9 @@ class HWIDTab(QWidget):
         
     def _do_copy(self) -> None:
         hwid = self.hwid_entry.text()
-        QApplication.clipboard().setText(hwid)
+        cb = QApplication.clipboard()
+        if cb is not None:
+            cb.setText(hwid)
         self._status_label.setText("\u2705  Copied to clipboard")
         if self.app:
             self.app.status("HWID copied to clipboard", "success")
