@@ -66,8 +66,8 @@ suitable for integration into any Python application or web backend.
   the OS-level machine identifier. Pluggable via `FingerprintProvider` Protocol.
 - **License Issuance** — Sign arbitrary payload fields into a JWT token
   and save as a `.lic` file with `schema_version` for future-proofing.
-- **License Validation** — Verify signature, expiration, and HWID match
-  on any machine.
+- **License Validation** — Verify signature, expiration (with grace period
+  enforcement), and HWID match on any machine.
 - **License Viewer** — Decode and inspect any `.lic` file with the
   matching public key — no private key needed.
 - **Integration Guide** — In-app rendered README with Python API docs
@@ -79,8 +79,8 @@ suitable for integration into any Python application or web backend.
 - **CLI** — Headless issuance, key generation, validation, and HWID retrieval
   via `rizmi` commands (Typer + Rich).
 - **Backend Module** — Drop-in validation function for app-server integration.
-- **Fully Tested** — 45+ pytest tests with Hypothesis property tests, contract
-  tests, regression tests, e2e tests, and ruff + mypy enforcement.
+- **Fully Tested** — 60+ pytest tests with Hypothesis property tests, contract
+  tests, regression tests, e2e tests, GUI tests, and ruff + mypy enforcement.
 
 ---
 
@@ -152,7 +152,8 @@ The `rizmi` command (Typer + Rich) provides headless access to all features:
 rizmi keys generate \
   --private-out keys/private_key.pem \
   --public-out keys/public_key.pem \
-  --key-size 2048
+  --key-size 2048 \
+  --passphrase
 
 # Get this machine's hardware fingerprint
 rizmi machine-id
@@ -304,6 +305,10 @@ rizmi license validate license.lic --public-key keys/public.pem
 rizmi license inspect license.lic --public-key keys/public.pem
 ```
 
+> To protect the private key at rest, add `--passphrase` to `keys generate`.
+> When issuing with an encrypted key, pass `--key-passphrase` or set
+> the `RIZMI_KEY_PASSPHRASE` environment variable.
+
 ---
 
 ## Integration Workflow — From Start to Finish
@@ -375,8 +380,10 @@ from py_rizmi import LicenseValidator
 validator = LicenseValidator.from_file("path/to/public_key.pem")
 
 try:
-    payload = validator.validate("path/to/license.lic")
+    payload = validator.validate_from_file("path/to/license.lic")
     print(f"Licensed to {payload.client}")
+    if payload.in_grace_period:
+        print("Warning: license is in grace period")
 except ValueError as e:
     print(f"License invalid: {e}")
 ```
@@ -544,9 +551,8 @@ deprecation-shim pattern for public API changes.
 
 ### Ideas for Contributions
 
-See the [future improvements roadmap](temp/future-improvments.md) for planned
-post-1.0 features: key rotation, online validation, certificate revocation
-lists, and tamper-evident audit logs.
+Planned post-1.0 features include key rotation, online validation,
+certificate revocation lists, and tamper-evident audit logs.
 
 ---
 

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Optional passphrase encryption for private keys (`--passphrase` on `keys generate`,
+  `--key-passphrase` / `RIZMI_KEY_PASSPHRASE` env var on `license issue`).
+- Grace period enforcement: `grace_days` field is now enforced in `LicenseValidator`;
+  expired licenses within the grace window return `in_grace_period=True` instead of
+  raising immediately.
+- `ERROR_MESSAGES` dictionary in `core/license_validator` centralizing all 7
+  validation error reasons with human-readable text.
+- Comprehensive GUI test suite (pytest-qt) covering all 5 views.
+- Unit and contract tests for grace period behavior.
+
+### Fixed
+- Pasted private keys in the GUI are now held in memory only (no temp file on disk).
+- `guide_view.py` Integration Guide tab now finds `README.md` correctly in all layouts.
+- Silent fallback on malformed numeric input in Generate License view now shows
+  a validation error instead of silently substituting defaults.
+- CLI and integration docstring now cover all 7 validation error reasons
+  (previously missing `invalid_algorithm` and `unsupported_schema`).
+
 ---
 
 ## [1.2.0] - 2026-07-14
