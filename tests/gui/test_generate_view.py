@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from PyQt6.QtWidgets import QMessageBox
 from pytestqt.qtbot import QtBot

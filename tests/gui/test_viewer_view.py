@@ -1,9 +1,8 @@
-import pytest
 from unittest.mock import patch, mock_open, MagicMock
 from datetime import datetime, timezone, timedelta
 from typing import cast
 
-from PyQt6.QtWidgets import QApplication, QFormLayout, QLabel
+from PyQt6.QtWidgets import QFormLayout, QLabel
 from pytestqt.qtbot import QtBot
 
 from py_rizmi.gui.views.viewer_view import ViewerTab
