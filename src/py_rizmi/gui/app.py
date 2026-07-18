@@ -21,7 +21,7 @@ LOGO_PATH = Path(__file__).resolve().parent.parent.parent / "media" / "logo.png"
 class LicenseToolApp(QMainWindow):
     """Root window for py-Rizmi Licensing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("py-Rizmi Licensing")
         self.resize(900, 700)
@@ -89,9 +89,9 @@ class LicenseToolApp(QMainWindow):
         sidebar_layout.addSpacing(30)
 
         # Nav Buttons
-        self.nav_buttons = {}
+        self.nav_buttons: dict[str, QPushButton] = {}
 
-        def add_nav(key, text):
+        def add_nav(key: str, text: str) -> None:
             btn = QPushButton(text)
             btn.setCheckable(True)
             btn.setFixedHeight(40)
@@ -133,12 +133,12 @@ class LicenseToolApp(QMainWindow):
         sidebar_layout.addWidget(self._status_label)
 
     def _build_views(self) -> None:
-        self.views = {}
-        
+        self.views: dict[str, QWidget] = {}
+
         # Initialize views and pass `self` as the app reference.
         self.views["hwid"] = HWIDView(self)
         self.views["keys"] = KeyManagerView(self)
-        self.views["gen"] = GenerateView(self.views["hwid"].get_hwid, self)
+        self.views["gen"] = GenerateView(self.views["hwid"].get_hwid, self)  # type: ignore[attr-defined]
         self.views["view"] = ViewerView(self)
         self.views["guide"] = GuideView(self)
 
@@ -153,7 +153,7 @@ class LicenseToolApp(QMainWindow):
             # Store the container index as a property on the view or map it manually
             # But we can just use the index of addition
             
-    def select_view(self, name: str):
+    def select_view(self, name: str) -> None:
         # Update button states
         for key, btn in self.nav_buttons.items():
             btn.setChecked(key == name)

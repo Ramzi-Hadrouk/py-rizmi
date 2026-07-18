@@ -1,5 +1,12 @@
 """Centralized styling and theming for PyQt6."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import qdarktheme
+
+if TYPE_CHECKING:
+    from PyQt6.QtWidgets import QApplication
 
 class Color:
     """Color palette matching the light modern design."""
@@ -23,7 +30,7 @@ class Color:
     SIDEBAR_HOVER = "#e5e7eb"  # gray-200
     TEXT = "#111827"           # gray-900
 
-def apply_theme(app) -> None:
+def apply_theme(app: QApplication) -> None:
     """Apply the custom qdarktheme with our accent colors."""
     qdarktheme.setup_theme(
         theme="light",

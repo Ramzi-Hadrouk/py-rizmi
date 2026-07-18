@@ -6,7 +6,7 @@ class StepCard(QFrame):
     """A card with a colored left-accent stripe, step number, title, divider,
     and a public `body_layout` where callers place their content."""
 
-    def __init__(self, step: int, title: str, parent=None):
+    def __init__(self, step: int, title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("StepCardBody")
         

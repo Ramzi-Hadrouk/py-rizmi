@@ -1,4 +1,6 @@
 """Reusable dynamic add/remove list widget for PyQt6."""
+from __future__ import annotations
+
 from typing import List
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QScrollArea, QFrame
@@ -13,10 +15,10 @@ class DynamicListWidget(QWidget):
     A single *Add* button appends a new blank row.
     """
     
-    def __init__(self, label: str = "Feature", parent=None):
+    def __init__(self, label: str = "Feature", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._label = label
-        self._rows = []
+        self._rows: list[dict[str, QWidget]] = []
         self._build()
         
     def _build(self) -> None:
@@ -80,7 +82,7 @@ class DynamicListWidget(QWidget):
         self.container_layout.addWidget(row_widget)
         self._rows.append(row_dict)
         
-    def _remove_row(self, row: dict) -> None:
+    def _remove_row(self, row: dict[str, QWidget]) -> None:
         if row not in self._rows:
             return
         self._rows.remove(row)
@@ -91,7 +93,11 @@ class DynamicListWidget(QWidget):
             self.add_row()
             
     def get_values(self) -> List[str]:
-        return [r["entry"].text().strip() for r in self._rows if r["entry"].text().strip()]
+        return [
+            r["entry"].text().strip()  # type: ignore[attr-defined]
+            for r in self._rows
+            if r["entry"].text().strip()  # type: ignore[attr-defined]
+        ]
         
     def set_values(self, values: List[str]) -> None:
         while self._rows:

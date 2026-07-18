@@ -84,7 +84,7 @@ def gui_command() -> None:  # noqa: D401
 
     qt_app = QApplication(sys.argv)
     apply_theme(qt_app)
-    window = LicenseToolApp()  # type: ignore[no-untyped-call]
+    window = LicenseToolApp()
     window.show()
     sys.exit(qt_app.exec())
 
