@@ -330,13 +330,23 @@ class GenerateTab(QWidget):
             
         try:
             max_c = int(self.entry_max_clients.text())
+            self.entry_max_clients.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         except ValueError:
-            max_c = 10
+            self.entry_max_clients.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.ERROR}; border-radius: 4px;")
+            QMessageBox.critical(self, "Validation Error", "Max Clients must be a valid integer.")
+            if self.app:
+                self.app.status("Validation failed: Max Clients", "error")
+            return None
             
         try:
             gd = int(self.entry_grace_days.text())
+            self.entry_grace_days.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         except ValueError:
-            gd = 14
+            self.entry_grace_days.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.ERROR}; border-radius: 4px;")
+            QMessageBox.critical(self, "Validation Error", "Grace Days must be a valid integer.")
+            if self.app:
+                self.app.status("Validation failed: Grace Days", "error")
+            return None
             
         payload = LicensePayload(
             client=self.entry_client.text().strip(),
