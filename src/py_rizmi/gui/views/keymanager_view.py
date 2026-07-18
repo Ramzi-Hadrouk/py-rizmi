@@ -1,5 +1,4 @@
 """Tab 2 — Keypair Management for PyQt6."""
-import tempfile
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QTextEdit, QComboBox, QFileDialog, QScrollArea, QFrame,
@@ -17,7 +16,7 @@ class KeyManagerTab(QWidget):
     def __init__(self, app=None):
         super().__init__()
         self.app = app
-        self._temp_files = []
+        self._pasted_pem: dict[str, str] = {}
         self._active_source = "generate"
         self._build()
         
@@ -264,19 +263,11 @@ class KeyManagerTab(QWidget):
         except Exception:
             return ""
 
-    def _write_temp_pem(self, content: str) -> str | None:
-        if "BEGIN " not in content:
-            QMessageBox.warning(self, "Warning", "Clipboard does not appear to contain a PEM key.")
-            return None
-        try:
-            tmp = tempfile.NamedTemporaryFile(suffix=".pem", delete=False, mode="w")
-            tmp.write(content)
-            tmp.close()
-            self._temp_files.append(tmp.name)
-            return tmp.name
-        except Exception as exc:
-            QMessageBox.critical(self, "Error", f"Failed to write temp key:\n{exc}")
-            return None
+    def _get_load_priv_pem(self) -> str:
+        return self._pasted_pem.get("priv") or self._read_file(self.priv_entry.text())
+
+    def _get_load_pub_pem(self) -> str:
+        return self._pasted_pem.get("pub") or self._read_file(self.pub_entry.text())
             
     # Actions
     
@@ -346,11 +337,13 @@ class KeyManagerTab(QWidget):
     def _browse_priv(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "Select Private Key", "", "PEM files (*.pem);;All files (*.*)")
         if path:
+            self._pasted_pem.pop("priv", None)
             self.priv_entry.setText(path)
             
     def _browse_pub(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "Select Public Key", "", "PEM files (*.pem);;All files (*.*)")
         if path:
+            self._pasted_pem.pop("pub", None)
             self.pub_entry.setText(path)
             
     def _paste_priv(self) -> None:
@@ -358,26 +351,30 @@ class KeyManagerTab(QWidget):
         if not clip:
             QMessageBox.warning(self, "Warning", "Clipboard is empty.")
             return
-        tmp = self._write_temp_pem(clip)
-        if tmp:
-            self.priv_entry.setText(tmp)
+        if "BEGIN " not in clip:
+            QMessageBox.warning(self, "Warning", "Clipboard does not appear to contain a PEM key.")
+            return
+        self._pasted_pem["priv"] = clip
+        self.priv_entry.setText("📋  Pasted key held in memory (not written to disk)")
             
     def _paste_pub(self) -> None:
         clip = QApplication.clipboard().text().strip()
         if not clip:
             QMessageBox.warning(self, "Warning", "Clipboard is empty.")
             return
-        tmp = self._write_temp_pem(clip)
-        if tmp:
-            self.pub_entry.setText(tmp)
+        if "BEGIN " not in clip:
+            QMessageBox.warning(self, "Warning", "Clipboard does not appear to contain a PEM key.")
+            return
+        self._pasted_pem["pub"] = clip
+        self.pub_entry.setText("📋  Pasted key held in memory (not written to disk)")
             
     def _on_validate(self) -> None:
         if self._active_source == "generate":
             priv_pem = self._get_private_pem()
             pub_pem = self._get_public_pem()
         else:
-            priv_pem = self._read_file(self.priv_entry.text())
-            pub_pem = self._read_file(self.pub_entry.text())
+            priv_pem = self._get_load_priv_pem()
+            pub_pem = self._get_load_pub_pem()
 
         if not priv_pem or not pub_pem:
             self._set_result("⚠  No keys available in active panel", Color.WARNING)
