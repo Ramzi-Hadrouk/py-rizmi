@@ -2,7 +2,7 @@
   <img
     src="https://raw.githubusercontent.com/Ramzi-Hadrouk/py-rizmi/main/media/logo.png"
     alt="py-Rizmi Licensing"
-    width="100"
+    width="200"
   />
 </p>
 
