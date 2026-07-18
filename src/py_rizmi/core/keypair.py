@@ -21,10 +21,10 @@ class KeyPairManager:
 
     @classmethod
     def generate_keypair(
-        cls, key_size: int = DEFAULT_KEY_SIZE
+        cls, key_size: int = DEFAULT_KEY_SIZE, passphrase: str | None = None
     ) -> Tuple[str, str]:
         """Generate a keypair and return (private_pem, public_pem) strings."""
-        return generate_rsa_keypair(key_size)
+        return generate_rsa_keypair(key_size, passphrase=passphrase)
 
     @classmethod
     def save_keypair(
@@ -32,11 +32,12 @@ class KeyPairManager:
         private_path: str,
         public_path: str,
         key_size: int = DEFAULT_KEY_SIZE,
+        passphrase: str | None = None,
     ) -> None:
         """Generate and persist a keypair to disk."""
         import os
 
-        private_pem, public_pem = cls.generate_keypair(key_size)
+        private_pem, public_pem = cls.generate_keypair(key_size, passphrase=passphrase)
         save_pem(private_pem, private_path)
         os.chmod(private_path, 0o600)
         save_pem(public_pem, public_path)
@@ -52,10 +53,13 @@ class KeyPairManager:
             return f.read()
 
     @staticmethod
-    def validate_private_key(pem_string: str) -> bool:
-        """Return True if *pem_string* is a well-formed RSA private key."""
+    def validate_private_key(pem_string: str, password: str | None = None) -> bool:
+        """Return True if *pem_string* is a well-formed RSA private key.
+
+        Pass *password* if the key is passphrase-encrypted.
+        """
         try:
-            _load_priv(pem_string)
+            _load_priv(pem_string, password=password)
             return True
         except Exception:
             return False
@@ -70,10 +74,10 @@ class KeyPairManager:
             return False
 
     @staticmethod
-    def verify_keypair(private_pem: str, public_pem: str) -> bool:
+    def verify_keypair(private_pem: str, public_pem: str, password: str | None = None) -> bool:
         """Return True if *public_pem* is the matching public key for *private_pem*."""
         try:
-            private_key = _load_priv(private_pem)
+            private_key = _load_priv(private_pem, password=password)
             public_key = _load_pub(public_pem)
             priv_nums = private_key.public_key().public_numbers()
             pub_nums = public_key.public_numbers()
@@ -82,12 +86,12 @@ class KeyPairManager:
             return False
 
     @staticmethod
-    def get_key_size(pem_string: str) -> int | None:
+    def get_key_size(pem_string: str, password: str | None = None) -> int | None:
         """Return the key size in bits, or None if the PEM is invalid."""
         try:
             key: RSAPrivateKey | RSAPublicKey
             if "PRIVATE KEY" in pem_string or "RSA PRIVATE KEY" in pem_string:
-                key = _load_priv(pem_string)
+                key = _load_priv(pem_string, password=password)
             else:
                 key = _load_pub(pem_string)
             return key.key_size

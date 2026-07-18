@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
 from typing import Annotated
 
@@ -73,6 +74,14 @@ def keys_generate(
             show_default=True,
         ),
     ] = 2048,
+    passphrase: Annotated[
+        bool,
+        typer.Option(
+            "--passphrase",
+            help="Encrypt the private key with a passphrase (hidden prompt; "
+                 "or set RIZMI_KEY_PASSPHRASE to run non-interactively, e.g. in CI).",
+        ),
+    ] = False,
 ) -> None:
     """Generate a new RSA keypair and save both keys to disk.
 
@@ -83,11 +92,17 @@ def keys_generate(
         _error(f"Unsupported key size [bold]{key_size}[/]. Choose from: {KeyPairManager.KEY_SIZES}")
         raise typer.Exit(1)
 
+    pw: str | None = None
+    if passphrase:
+        pw = os.environ.get("RIZMI_KEY_PASSPHRASE") or typer.prompt(
+            "Private key passphrase", hide_input=True, confirmation_prompt=True
+        )
+
     with console.status(
         f"[bold cyan]Generating {key_size}-bit RSA keypair…[/]", spinner="dots"
     ):
         try:
-            KeyPairManager.save_keypair(str(private_out), str(public_out), key_size)
+            KeyPairManager.save_keypair(str(private_out), str(public_out), key_size, passphrase=pw)
         except Exception as exc:
             _error(f"Key generation failed: {exc}")
             raise typer.Exit(2) from exc

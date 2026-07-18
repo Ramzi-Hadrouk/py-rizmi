@@ -14,14 +14,16 @@ from ..widgets.dynamic_list import DynamicListWidget
 from ..widgets.step_card import StepCard
 from ..theme import Color
 
+from typing import Any
+
 class GenerateTab(QWidget):
     """Single-column step-by-step license generation form."""
     
-    def __init__(self, get_hwid_cb=None, app=None):
+    def __init__(self, get_hwid_cb: Any = None, app: Any = None) -> None:
         super().__init__()
         self._get_hwid_cb = get_hwid_cb
         self.app = app
-        self._required_entries = []
+        self._required_entries: list[tuple[QLineEdit, str]] = []
         self._build()
         
     def _build(self) -> None:
@@ -68,6 +70,17 @@ class GenerateTab(QWidget):
         row.addWidget(btn_browse)
         card.body_layout.addLayout(row)
         
+        pw_row = QHBoxLayout()
+        lbl_pw = QLabel("Passphrase:")
+        lbl_pw.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
+        self.pw_entry = QLineEdit()
+        self.pw_entry.setEchoMode(QLineEdit.EchoMode.Password)
+        self.pw_entry.setPlaceholderText("Optional…")
+        self.pw_entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
+        pw_row.addWidget(lbl_pw)
+        pw_row.addWidget(self.pw_entry, stretch=1)
+        card.body_layout.addLayout(pw_row)
+        
         lbl_tip = QLabel("ℹ  Use the Key Management tab to generate and save a private key first.")
         lbl_tip.setStyleSheet(f"color: {Color.FG_MUTED}; font-size: 11px;")
         card.body_layout.addWidget(lbl_tip)
@@ -80,7 +93,7 @@ class GenerateTab(QWidget):
         lbl_req.setStyleSheet(f"color: {Color.ERROR}; font-size: 11px;")
         card.body_layout.addWidget(lbl_req)
         
-        def _add_field(label_text, required=True, kind=None):
+        def _add_field(label_text: str, required: bool = True, kind: str | None = None) -> QLineEdit:
             row = QHBoxLayout()
             lbl = QLabel(label_text)
             lbl.setFixedWidth(120)
@@ -126,7 +139,7 @@ class GenerateTab(QWidget):
         grid = QHBoxLayout()
         grid.setSpacing(15)
         
-        def _mini_card(title, widget):
+        def _mini_card(title: str, widget: QWidget) -> QWidget:
             frm = QFrame()
             frm.setObjectName("Panel")
             layout = QVBoxLayout(frm)
@@ -179,7 +192,7 @@ class GenerateTab(QWidget):
         card = StepCard(step=4, title="Validity Dates")
         self.content_layout.addWidget(card)
         
-        def _date_row(label, has_days=False):
+        def _date_row(label: str, has_days: bool = False) -> tuple[QCheckBox, QLineEdit | None, QDateEdit]:
             frm = QFrame()
             frm.setObjectName("Panel")
             lay = QHBoxLayout(frm)
@@ -289,7 +302,8 @@ class GenerateTab(QWidget):
         QMessageBox.warning(self, "Warning", "No HWID found. Generate it in Tab 1 first.")
         
     def _paste_hwid(self) -> None:
-        clip = QApplication.clipboard().text().strip()
+        cb = QApplication.clipboard()
+        clip = cb.text().strip() if cb else ""
         if not clip:
             QMessageBox.warning(self, "Warning", "Clipboard is empty.")
             return
@@ -344,7 +358,7 @@ class GenerateTab(QWidget):
             
         if self.exp_auto.isChecked():
             try:
-                days = int(self.exp_days.text())
+                days = int(self.exp_days.text()) if self.exp_days else 365
             except ValueError:
                 days = 365
             payload.set_auto_exp(days)
@@ -370,7 +384,8 @@ class GenerateTab(QWidget):
         self.iat_auto.setChecked(True)
         self.iat_picker.setDate(QDate.currentDate())
         self.exp_auto.setChecked(True)
-        self.exp_days.setText("365")
+        if self.exp_days:
+            self.exp_days.setText("365")
         self.exp_picker.setDate(QDate.currentDate())
         
         for entry, _ in self._required_entries:
@@ -412,7 +427,8 @@ class GenerateTab(QWidget):
             return
             
         try:
-            issuer = LicenseIssuer.from_file(key_path)
+            pw = self.pw_entry.text() or None
+            issuer = LicenseIssuer.from_file(key_path, passphrase=pw)
             issuer.issue_to_file(payload, save_path)
             QMessageBox.information(self, "License Issued ✅", f"License written to:\n{save_path}")
             if self.app:

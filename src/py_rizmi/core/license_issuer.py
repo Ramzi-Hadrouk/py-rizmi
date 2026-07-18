@@ -6,6 +6,7 @@ import os
 
 import jwt
 
+from py_rizmi.core.crypto import load_private_key
 from py_rizmi.models.license_payload import LicensePayload
 
 logger = logging.getLogger("license")
@@ -16,19 +17,21 @@ class LicenseIssuer:
 
     ALGORITHM = "RS256"
 
-    def __init__(self, private_key: str):
+    def __init__(self, private_key: str, passphrase: str | None = None):
         self.private_key = private_key
+        self.passphrase = passphrase
 
     @classmethod
-    def from_file(cls, private_key_path: str) -> LicenseIssuer:
+    def from_file(cls, private_key_path: str, passphrase: str | None = None) -> LicenseIssuer:
         with open(private_key_path, "r") as f:
-            return cls(f.read())
+            return cls(f.read(), passphrase=passphrase)
 
     def issue(self, payload: LicensePayload) -> str:
         """Sign *payload* and return the JWT token string."""
+        signing_key = load_private_key(self.private_key, password=self.passphrase)
         token = jwt.encode(
             payload.to_dict(),
-            self.private_key,
+            signing_key,
             algorithm=self.ALGORITHM,
         )
         logger.info(

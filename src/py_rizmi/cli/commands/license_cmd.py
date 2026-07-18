@@ -84,6 +84,16 @@ def license_issue(
         Path,
         typer.Option("--private-key", "-k", help="Path to the RSA private key PEM."),
     ],
+    key_passphrase: Annotated[
+        Optional[str],
+        typer.Option(
+            "--key-passphrase",
+            help="Passphrase for an encrypted private key. Prefer the RIZMI_KEY_PASSPHRASE "
+                 "environment variable over this flag — it avoids the passphrase appearing "
+                 "in shell history or in `ps` output.",
+            envvar="RIZMI_KEY_PASSPHRASE",
+        ),
+    ] = None,
     output: Annotated[
         Path,
         typer.Option("--output", "-o", help="Output path for the .lic file.", show_default=True),
@@ -165,7 +175,7 @@ def license_issue(
 
     with console.status("[bold cyan]Signing license…[/]", spinner="dots"):
         try:
-            issuer = LicenseIssuer.from_file(str(private_key))
+            issuer = LicenseIssuer.from_file(str(private_key), passphrase=key_passphrase)
             issuer.issue_to_file(payload, str(output))
         except FileNotFoundError as exc:
             _error(f"Key file error: {exc}")

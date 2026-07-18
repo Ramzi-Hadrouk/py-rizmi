@@ -10,10 +10,12 @@ from ...core.keypair import KeyPairManager
 from ..theme import Color
 from ..widgets.step_card import StepCard
 
+from typing import Any
+
 class KeyManagerTab(QWidget):
     """Manage RSA keypairs — generate, load, and validate."""
     
-    def __init__(self, app=None):
+    def __init__(self, app: Any = None) -> None:
         super().__init__()
         self.app = app
         self._pasted_pem: dict[str, str] = {}
@@ -90,7 +92,7 @@ class KeyManagerTab(QWidget):
         self._build_generate_panel()
         self._build_load_panel()
         
-    def _set_mode(self, mode: str):
+    def _set_mode(self, mode: str) -> None:
         self._active_source = mode
         if mode == "generate":
             self.btn_gen_mode.setChecked(True)
@@ -118,6 +120,16 @@ class KeyManagerTab(QWidget):
         self.combo_size.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
         ctrl.addWidget(self.combo_size)
         
+        lbl_pw = QLabel("Passphrase:")
+        lbl_pw.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
+        ctrl.addWidget(lbl_pw)
+
+        self.gen_pw_entry = QLineEdit()
+        self.gen_pw_entry.setEchoMode(QLineEdit.EchoMode.Password)
+        self.gen_pw_entry.setPlaceholderText("Optional")
+        self.gen_pw_entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
+        ctrl.addWidget(self.gen_pw_entry)
+        
         btn_gen = QPushButton("⚙  Generate Keypair")
         btn_gen.setStyleSheet(f"background-color: {Color.ACCENT}; color: white; font-weight: bold;")
         btn_gen.clicked.connect(self._on_generate)
@@ -132,7 +144,7 @@ class KeyManagerTab(QWidget):
         pem_layout = QHBoxLayout()
         layout.addLayout(pem_layout)
         
-        def _make_pem_card(title, icon):
+        def _make_pem_card(title: str, icon: str) -> tuple[QFrame, QTextEdit, QPushButton, QPushButton]:
             frm = QFrame()
             frm.setObjectName("Panel")
             lay = QVBoxLayout(frm)
@@ -184,7 +196,7 @@ class KeyManagerTab(QWidget):
         lbl_tip.setStyleSheet(f"color: {Color.FG_MUTED};")
         layout.addWidget(lbl_tip)
         
-        def _make_load_row(title, attr_prefix):
+        def _make_load_row(title: str, attr_prefix: str) -> tuple[QLineEdit, QPushButton, QPushButton]:
             lbl = QLabel(title)
             lbl.setStyleSheet("font-weight: bold;")
             layout.addWidget(lbl)
@@ -193,7 +205,6 @@ class KeyManagerTab(QWidget):
             entry = QLineEdit()
             entry.setReadOnly(True)
             entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
-            setattr(self, f"{attr_prefix}_entry", entry)
             row.addWidget(entry)
 
             btn_browse = QPushButton("Browse…")
@@ -203,18 +214,17 @@ class KeyManagerTab(QWidget):
             row.addWidget(btn_browse)
             row.addWidget(btn_paste)
 
-            setattr(self, f"{attr_prefix}_btn_browse", btn_browse)
-            setattr(self, f"{attr_prefix}_btn_paste", btn_paste)
             layout.addLayout(row)
+            return entry, btn_browse, btn_paste
             
-        _make_load_row("🔒  Private Key File:", "priv")
+        self.priv_entry, self.priv_btn_browse, self.priv_btn_paste = _make_load_row("🔒  Private Key File:", "priv")
         
         div = QFrame()
         div.setFixedHeight(1)
         div.setStyleSheet(f"background-color: {Color.BORDER};")
         layout.addWidget(div)
         
-        _make_load_row("🔓  Public Key File:", "pub")
+        self.pub_entry, self.pub_btn_browse, self.pub_btn_paste = _make_load_row("🔓  Public Key File:", "pub")
         
         self.priv_btn_browse.clicked.connect(self._browse_priv)
         self.pub_btn_browse.clicked.connect(self._browse_pub)
@@ -230,6 +240,17 @@ class KeyManagerTab(QWidget):
         lbl_desc = QLabel("Confirm that the private and public keys belong to the same RSA keypair.")
         lbl_desc.setStyleSheet(f"color: {Color.FG_MUTED};")
         card.body_layout.addWidget(lbl_desc)
+        
+        pw_row = QHBoxLayout()
+        lbl_val_pw = QLabel("Private Key Passphrase:")
+        lbl_val_pw.setStyleSheet(f"font-weight: bold; color: {Color.FG_MUTED};")
+        self.val_pw_entry = QLineEdit()
+        self.val_pw_entry.setEchoMode(QLineEdit.EchoMode.Password)
+        self.val_pw_entry.setPlaceholderText("Required only if private key is encrypted")
+        self.val_pw_entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
+        pw_row.addWidget(lbl_val_pw)
+        pw_row.addWidget(self.val_pw_entry, stretch=1)
+        card.body_layout.addLayout(pw_row)
         
         act_row = QHBoxLayout()
         act_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -264,17 +285,18 @@ class KeyManagerTab(QWidget):
             return ""
 
     def _get_load_priv_pem(self) -> str:
-        return self._pasted_pem.get("priv") or self._read_file(self.priv_entry.text())
+        return str(self._pasted_pem.get("priv") or self._read_file(self.priv_entry.text()))
 
     def _get_load_pub_pem(self) -> str:
-        return self._pasted_pem.get("pub") or self._read_file(self.pub_entry.text())
+        return str(self._pasted_pem.get("pub") or self._read_file(self.pub_entry.text()))
             
     # Actions
     
     def _on_generate(self) -> None:
         key_size = int(self.combo_size.currentText())
+        pw = self.gen_pw_entry.text() or None
         try:
-            priv_pem, pub_pem = KeyPairManager.generate_keypair(key_size)
+            priv_pem, pub_pem = KeyPairManager.generate_keypair(key_size, passphrase=pw)
             self.txt_priv.setPlainText(priv_pem)
             self.txt_pub.setPlainText(pub_pem)
             self.lbl_gen_info.setText(f"✅  {key_size}-bit RSA keypair ready")
@@ -315,7 +337,9 @@ class KeyManagerTab(QWidget):
     def _copy_private(self) -> None:
         pem = self._get_private_pem()
         if pem:
-            QApplication.clipboard().setText(pem)
+            cb = QApplication.clipboard()
+            if cb:
+                cb.setText(pem)
             self.lbl_gen_info.setText("📋  Private key copied")
             self.lbl_gen_info.setStyleSheet(f"color: {Color.SUCCESS};")
             if self.app:
@@ -326,7 +350,9 @@ class KeyManagerTab(QWidget):
     def _copy_public(self) -> None:
         pem = self._get_public_pem()
         if pem:
-            QApplication.clipboard().setText(pem)
+            cb = QApplication.clipboard()
+            if cb:
+                cb.setText(pem)
             self.lbl_gen_info.setText("📋  Public key copied")
             self.lbl_gen_info.setStyleSheet(f"color: {Color.SUCCESS};")
             if self.app:
@@ -347,7 +373,8 @@ class KeyManagerTab(QWidget):
             self.pub_entry.setText(path)
             
     def _paste_priv(self) -> None:
-        clip = QApplication.clipboard().text().strip()
+        cb = QApplication.clipboard()
+        clip = cb.text().strip() if cb else ""
         if not clip:
             QMessageBox.warning(self, "Warning", "Clipboard is empty.")
             return
@@ -358,7 +385,8 @@ class KeyManagerTab(QWidget):
         self.priv_entry.setText("📋  Pasted key held in memory (not written to disk)")
             
     def _paste_pub(self) -> None:
-        clip = QApplication.clipboard().text().strip()
+        cb = QApplication.clipboard()
+        clip = cb.text().strip() if cb else ""
         if not clip:
             QMessageBox.warning(self, "Warning", "Clipboard is empty.")
             return
@@ -380,7 +408,9 @@ class KeyManagerTab(QWidget):
             self._set_result("⚠  No keys available in active panel", Color.WARNING)
             return
 
-        priv_ok = KeyPairManager.validate_private_key(priv_pem)
+        pw = self.val_pw_entry.text() or None
+
+        priv_ok = KeyPairManager.validate_private_key(priv_pem, password=pw)
         pub_ok = KeyPairManager.validate_public_key(pub_pem)
 
         if not priv_ok and not pub_ok:
@@ -393,8 +423,8 @@ class KeyManagerTab(QWidget):
             self._set_result("❌  Public key is invalid PEM", Color.ERROR)
             return
 
-        if KeyPairManager.verify_keypair(priv_pem, pub_pem):
-            size = KeyPairManager.get_key_size(priv_pem)
+        if KeyPairManager.verify_keypair(priv_pem, pub_pem, password=pw):
+            size = KeyPairManager.get_key_size(priv_pem, password=pw)
             self._set_result(f"✅  Keys match — {size}-bit RSA pair", Color.SUCCESS)
             if self.app:
                 self.app.status(f"Keys validated: {size}-bit pair", "success")

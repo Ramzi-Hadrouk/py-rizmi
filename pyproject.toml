@@ -60,7 +60,7 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["py_rizmi.gui.*"]
-ignore_errors = true
+ignore_errors = false
 
 [tool.pytest.ini_options]
 markers = ["slow: slower integration/GUI/e2e tests"]
