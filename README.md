@@ -22,9 +22,8 @@
 </p>
 
 <p align="center">
-  Offline software licensing toolkit using RSA-signed JWT tokens.<br>
-  Generate license keys, validate them against machine fingerprints (HWID),<br>
-  and manage the full lifecycle — via PyQt6 GUI, CLI, or Python API.
+py-Rizmi is an offline-first licensing toolkit that helps developers protect and distribute Python software through cryptographically signed licenses,
+hardware-bound activation, and secure local validation, while remaining flexible for future online licensing workflows.
 </p>
 
 ---
