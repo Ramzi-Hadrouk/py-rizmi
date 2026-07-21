@@ -1,4 +1,5 @@
 import time
+from dataclasses import dataclass
 import pytest
 
 from py_rizmi.core.license_issuer import LicenseIssuer
@@ -9,6 +10,28 @@ def _make_token(priv_path, payload):
     payload.set_auto_iat()
     payload.set_auto_exp(365)
     return LicenseIssuer.from_file(str(priv_path)).issue(payload)
+
+
+@dataclass
+class _FakeClockResult:
+    ok: bool
+    detail: str = ""
+
+
+class _FakeClockGuard:
+    def __init__(self, drift_ok=True, update_ok=True):
+        self.drift_ok = drift_ok
+        self.update_ok = update_ok
+        self.drift_checks = 0
+        self.update_checks = 0
+
+    def check_session_drift(self):
+        self.drift_checks += 1
+        return _FakeClockResult(self.drift_ok, "session drift")
+
+    def check_and_update(self):
+        self.update_checks += 1
+        return _FakeClockResult(self.update_ok, "rollback")
 
 
 def test_validate_valid(temp_keypair, sample_payload):
@@ -90,6 +113,35 @@ def test_validate_not_expired_with_custom_grace(temp_keypair, sample_payload):
     result = LicenseValidator.from_file(str(pub)).validate(token, check_hwid=False)
     assert result.in_grace_period is False
     assert result.grace_days == 1
+
+
+def test_validate_with_clock_guard_runs_both_checks(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    token = _make_token(priv, sample_payload)
+    guard = _FakeClockGuard()
+    result = LicenseValidator.from_file(str(pub), clock_guard=guard).validate(
+        token, check_hwid=False
+    )
+    assert result.client == sample_payload.client
+    assert guard.drift_checks == 1
+    assert guard.update_checks == 1
+
+
+def test_validate_clock_guard_failure_raises_clock_tampering(temp_keypair, sample_payload):
+    priv, pub = temp_keypair
+    token = _make_token(priv, sample_payload)
+    guard = _FakeClockGuard(update_ok=False)
+    with pytest.raises(ValueError, match="clock_tampering"):
+        LicenseValidator.from_file(str(pub), clock_guard=guard).validate(
+            token, check_hwid=False
+        )
+
+
+def test_from_file_preserves_clock_guard(temp_keypair):
+    _, pub = temp_keypair
+    guard = _FakeClockGuard()
+    validator = LicenseValidator.from_file(str(pub), clock_guard=guard)
+    assert validator.clock_guard is guard
 
 
 def test_validate_tampered(temp_keypair, sample_payload):
