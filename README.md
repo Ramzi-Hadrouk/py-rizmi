@@ -67,6 +67,9 @@ suitable for integration into any Python application or web backend.
   and save as a `.lic` file with `schema_version` for future-proofing.
 - **License Validation** — Verify signature, expiration (with grace period
   enforcement), and HWID match on any machine.
+- **Clock Tamper Protection** — Persist a local high-water mark and
+  session drift check to catch obvious clock rollback attempts in offline
+  validation flows.
 - **License Viewer** — Decode and inspect any `.lic` file with the
   matching public key — no private key needed.
 - **Integration Guide** — In-app rendered README with Python API docs
@@ -78,7 +81,7 @@ suitable for integration into any Python application or web backend.
 - **CLI** — Headless issuance, key generation, validation, and HWID retrieval
   via `rizmi` commands (Typer + Rich).
 - **Backend Module** — Drop-in validation function for app-server integration.
-- **Fully Tested** — 60+ pytest tests with Hypothesis property tests, contract
+- **Fully Tested** — 80+ pytest tests with Hypothesis property tests, contract
   tests, regression tests, e2e tests, GUI tests, and ruff + mypy enforcement.
 
 ---
@@ -87,8 +90,9 @@ suitable for integration into any Python application or web backend.
 
 ```
 py_rizmi/core/          ← Pure Python. No GUI. 100% testable.
+py_rizmi/core/clock_guard.py ← Local clock rollback protection and persistence.
 py_rizmi/models/        ← LicensePayload dataclass with schema_version.
-py_rizmi/integrations/  ← Server-side validation helper.
+py_rizmi/integrations/  ← Server-side validation helper + clock guard wiring.
 py_rizmi/gui/           ← PyQt6 widgets. Depends on core/. Optional [gui] extra.
 py_rizmi/cli/           ← Typer CLI (rizmi command). Depends on core/.
 py_rizmi/_internal/     ← Private implementation — never import directly.
@@ -405,6 +409,8 @@ except ValueError as e:
 The drop-in validator enables local clock rollback protection by default
 and may raise `clock_tampering` alongside the standard validation errors.
 Pass `enable_clock_guard=False` only for diagnostics or tests.
+The direct `LicenseValidator` API also accepts an optional `clock_guard`
+argument for the same behavior.
 
 ---
 
@@ -496,11 +502,12 @@ py-rizmi/
 │       ├── __init__.py              # Public API (__all__)
 │       ├── _version.py              # hatch-vcs generated (gitignored)
 │       ├── core/                    # Pure logic — no GUI
+│       │   ├── clock_guard.py       # Local anti-rollback clock guard
 │       │   ├── crypto.py            # RSA primitives
 │       │   ├── hwid.py              # Machine fingerprint + FingerprintProvider Protocol
 │       │   ├── keypair.py           # RSA keypair management
 │       │   ├── license_issuer.py    # Token signing
-│       │   └── license_validator.py # Token validation + decode
+│       │   └── license_validator.py # Token validation + decode + optional clock guard
 │       ├── models/
 │       │   └── license_payload.py   # LicensePayload dataclass with schema_version
 │       ├── gui/                     # PyQt6 GUI (optional [gui] extra)
@@ -516,7 +523,7 @@ py-rizmi/
 │       │       ├── step_card.py
 │       │       └── dynamic_list.py
 │       ├── integrations/
-│       │   └── validation.py        # Server-side validation helper
+│       │   └── validation.py        # Server-side validation helper + clock state paths
 │       ├── cli/                     # rizmi CLI (Typer + Rich)
 │       │   ├── app.py               # Root app + help banner + --version
 │       │   └── commands/
@@ -529,8 +536,9 @@ py-rizmi/
 │   └── .gitkeep
 └── tests/                           # comprehensive pytest suite
     ├── unit/
-    │   ├── core/                      # Core cryptography unit tests
-    │   └── models/                    # Data model unit tests
+    │   ├── core/                    # Core cryptography + clock guard unit tests
+    │   ├── integrations/            # Integration helper tests
+    │   └── models/                  # Data model unit tests
     ├── integration/                 # Hypothesis property tests
     ├── contract/                    # Golden fixtures and compatibility checks
     ├── regression/                  # Specific bug repro/regression tests
