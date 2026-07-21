@@ -2,6 +2,7 @@
 
 Drop this into app-server/config/ alongside public_key.pem and license.lic.
 """
+import importlib.util
 import hashlib
 import logging
 import os
@@ -15,12 +16,7 @@ from py_rizmi.core.license_validator import LicenseValidator
 
 logger = logging.getLogger("license")
 
-try:
-    import platformdirs
-
-    _HAVE_PLATFORMDIRS = True
-except ImportError:  # pragma: no cover - platformdirs is a declared dependency
-    _HAVE_PLATFORMDIRS = False
+_HAVE_PLATFORMDIRS = importlib.util.find_spec("platformdirs") is not None
 
 # Fixed, non-secret salt used only to derive a stable-but-meaningless
 # on-disk filename -- see _obfuscated_name(). Distinct from

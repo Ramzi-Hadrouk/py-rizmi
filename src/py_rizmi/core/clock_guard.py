@@ -45,7 +45,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 logger = logging.getLogger("license")
 
@@ -90,12 +90,12 @@ def _derive_key(machine_id: str) -> bytes:
     return hmac.new(_APP_SALT, machine_id.encode("utf-8"), hashlib.sha256).digest()
 
 
-def _sign(payload: dict, key: bytes) -> str:
+def _sign(payload: Mapping[str, object], key: bytes) -> str:
     body = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hmac.new(key, body, hashlib.sha256).hexdigest()
 
 
-def _encode(signed: dict) -> str:
+def _encode(signed: Mapping[str, object]) -> str:
     """Base64-obscure the signed JSON payload before it touches disk.
 
     This is NOT encryption and provides no cryptographic confidentiality
@@ -108,12 +108,12 @@ def _encode(signed: dict) -> str:
     return base64.b64encode(raw).decode("ascii")
 
 
-def _decode(text: str) -> dict:
+def _decode(text: str) -> dict[str, object]:
     """Inverse of _encode(). Raises ValueError on any malformed input so
     callers can treat it identically to a failed signature check."""
     try:
         raw = base64.b64decode(text.strip(), validate=True)
-        return json.loads(raw)
+        return cast(dict[str, object], json.loads(raw))
     except (binascii.Error, ValueError, json.JSONDecodeError) as exc:
         raise ValueError(f"not a valid clock-guard state blob: {exc}") from exc
 
@@ -132,7 +132,7 @@ class ClockGuard:
 
     def __init__(
         self,
-        state_paths: Union[str, Path, List[Union[str, Path]]],
+        state_paths: Union[str, Path, Sequence[Union[str, Path]]],
         machine_id: str,
         tolerance_seconds: int = 300,
     ):
@@ -180,7 +180,10 @@ class ClockGuard:
         ):
             return "tampered", None
         try:
-            return "valid", int(payload.get("last_seen_unix", 0))
+            last_seen = payload.get("last_seen_unix", 0)
+            if not isinstance(last_seen, (int, float, str, bytes, bytearray)):
+                return "tampered", None
+            return "valid", int(last_seen)
         except (TypeError, ValueError):
             return "tampered", None
 

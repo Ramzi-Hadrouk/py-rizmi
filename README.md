@@ -395,12 +395,16 @@ For apps with a validation server:
 from py_rizmi.integrations.validation import validate_license
 
 try:
-    payload = validate_license("/path/to/config/dir")
+    payload = validate_license("/path/to/config/dir", app_name="YourProduct")
     # config dir must contain public_key.pem and license.lic
     print(payload["client"], payload["features"])
 except ValueError as e:
     print(f"License invalid: {e}")
 ```
+
+The drop-in validator enables local clock rollback protection by default
+and may raise `clock_tampering` alongside the standard validation errors.
+Pass `enable_clock_guard=False` only for diagnostics or tests.
 
 ---
 
