@@ -1,4 +1,5 @@
 import os
+import sys
 from unittest import mock
 
 import pytest
@@ -166,13 +167,28 @@ def test_app_name_changes_the_os_standard_directory_name():
 
 
 def test_linux_paths_avoid_cache_directory():
-    with mock.patch("sys.platform", "linux"), mock.patch.dict(
-        os.environ, {"HOME": "/home/alice"}, clear=False
+    # On non-POSIX runners (e.g. Windows CI), `platformdirs.unix` cannot be
+    # imported at module level because it does `from os import getuid`, a
+    # POSIX-only symbol.  We inject a fake module into sys.modules so that
+    # the `from platformdirs.unix import Unix` inside _platform_dirs() is
+    # satisfiable without touching any real C-level OS API.
+    # Production code is unchanged; the dependency boundary is controlled here.
+    mock_unix_instance = mock.MagicMock()
+    mock_unix_instance.user_config_dir = "/home/alice/.config/py-rizmi"
+    mock_unix_instance.user_data_dir = "/home/alice/.local/share/py-rizmi"
+    fake_unix_module = mock.MagicMock()
+    fake_unix_module.Unix.return_value = mock_unix_instance
+
+    with (
+        mock.patch("sys.platform", "linux"),
+        mock.patch.dict(sys.modules, {"platformdirs.unix": fake_unix_module}),
+        mock.patch.dict(os.environ, {"HOME": "/home/alice"}, clear=False),
     ):
         for k in list(os.environ):
             if k.startswith("XDG_"):
                 os.environ.pop(k)
         dir_a, dir_b = validation_mod._platform_dirs("py-rizmi")
+
     assert ".cache" not in dir_a and ".cache" not in dir_b
     assert dir_a == "/home/alice/.config/py-rizmi"
     assert dir_b == "/home/alice/.local/share/py-rizmi"

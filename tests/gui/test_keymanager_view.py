@@ -1,5 +1,4 @@
-from unittest.mock import patch
-from PyQt6.QtWidgets import QApplication
+from unittest.mock import MagicMock, patch
 from pytestqt.qtbot import QtBot
 
 from py_rizmi.gui.views.keymanager_view import KeyManagerTab
@@ -20,23 +19,33 @@ def test_keymanager_generate_keypair(qtbot: QtBot) -> None:
 
 
 def test_keymanager_paste_holds_in_memory(qtbot: QtBot) -> None:
-    """Test pasting keys holds them in memory and not on disk."""
+    """Test pasting keys holds them in memory and not on disk.
+
+    The real X11 clipboard cannot be set in headless CI environments
+    (QXcbClipboard::setMimeData: Cannot set X11 selection owner), so we mock
+    QApplication.clipboard() to return a controlled fake instead of writing
+    to the actual system clipboard.
+    """
     view = KeyManagerTab()
     qtbot.addWidget(view)
-    
+
     view.btn_load_mode.setChecked(True)
-    
-    cb = QApplication.clipboard()
-    assert cb is not None
-    cb.setText("-----BEGIN PRIVATE KEY-----\ndummy_pasted_priv_key\n-----END PRIVATE KEY-----")
-    view._paste_priv()
-    
+
+    priv_pem = "-----BEGIN PRIVATE KEY-----\ndummy_pasted_priv_key\n-----END PRIVATE KEY-----"
+    pub_pem = "-----BEGIN PUBLIC KEY-----\ndummy_pasted_pub_key\n-----END PUBLIC KEY-----"
+
+    mock_cb = MagicMock()
+    mock_cb.text.return_value = priv_pem
+    with patch("py_rizmi.gui.views.keymanager_view.QApplication.clipboard", return_value=mock_cb):
+        view._paste_priv()
+
     assert "dummy_pasted_priv_key" in view._pasted_pem["priv"]
     assert "memory" in view.priv_entry.text()
-    
-    cb.setText("-----BEGIN PUBLIC KEY-----\ndummy_pasted_pub_key\n-----END PUBLIC KEY-----")
-    view._paste_pub()
-    
+
+    mock_cb.text.return_value = pub_pem
+    with patch("py_rizmi.gui.views.keymanager_view.QApplication.clipboard", return_value=mock_cb):
+        view._paste_pub()
+
     assert "dummy_pasted_pub_key" in view._pasted_pem["pub"]
     assert "memory" in view.pub_entry.text()
 
