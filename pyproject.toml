@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-gui = ["PyQt6>=6.6", "pyqtdarktheme>=2.1.0", "markdown>=3.3.0"]
+gui = ["PyQt6>=6.6", "markdown>=3.3.0"]
 dev = [
     "pytest>=8.0",
     "pytest-cov",
@@ -65,7 +65,7 @@ python_version = "3.12"
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["qdarktheme", "markdown.*"]
+module = ["markdown.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
