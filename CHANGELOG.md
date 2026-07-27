@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.4.4] - 2026-07-27
+
 ### Added
 - Optional passphrase encryption for private keys (`--passphrase` on `keys generate`,
   `--key-passphrase` / `RIZMI_KEY_PASSPHRASE` env var on `license issue`).
@@ -19,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Unit and contract tests for grace period behavior.
 
 ### Fixed
+- Removed `pyqtdarktheme` from `[gui]` optional dependencies — the package never
+  published v2.x to PyPI and has no Python 3.13 wheel, making `pip install py-rizmi[gui]`
+  fail with `ResolutionImpossible` on Python 3.13.
+- Replaced `qdarktheme.setup_theme()` with Qt's built-in Fusion style + `QPalette` +
+  QSS — same light design, zero third-party theme libraries required.
 - Pasted private keys in the GUI are now held in memory only (no temp file on disk).
 - `guide_view.py` Integration Guide tab now finds `README.md` correctly in all layouts.
 - Silent fallback on malformed numeric input in Generate License view now shows
