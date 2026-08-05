@@ -127,8 +127,8 @@ def test_generate_tab_shows_algorithm_help_text(qtbot: QtBot) -> None:
     assert gen_page is not None
 
     # Find all labels in the Generate page
-    labels = [l.text() for l in gen_page.findChildren(QLabel)]
-    help_texts = [l for l in labels if "RSA algorithm" in l and "AES encryption" in l]
+    labels = [label.text() for label in gen_page.findChildren(QLabel)]
+    help_texts = [text for text in labels if "RSA algorithm" in text and "AES encryption" in text]
 
     assert len(help_texts) > 0, "Help text about RSA algorithm and AES encryption not found"
 
