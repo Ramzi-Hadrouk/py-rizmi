@@ -158,6 +158,15 @@ class KeyManagerTab(QWidget):
         ctrl.addWidget(btn_gen)
         card.body_layout.addLayout(ctrl)
 
+        # Help text for algorithm and passphrase
+        lbl_help = QLabel(
+            "RSA algorithm with 2048, 3072, or 4096-bit keys. "
+            "Passphrase is optional — if provided, the private key will be protected with AES encryption."
+        )
+        lbl_help.setStyleSheet(f"color: {Color.FG_MUTED}; font-size: 12px;")
+        lbl_help.setWordWrap(True)
+        card.body_layout.addWidget(lbl_help)
+
         self.lbl_gen_info = QLabel("")
         self.lbl_gen_info.setWordWrap(True)
         card.body_layout.addWidget(self.lbl_gen_info)
@@ -277,14 +286,6 @@ class KeyManagerTab(QWidget):
         self.pub_btn_browse.clicked.connect(self._browse_pub)
         self.priv_btn_paste.clicked.connect(self._paste_priv)
         self.pub_btn_paste.clicked.connect(self._paste_pub)
-
-        handoff = QHBoxLayout()
-        btn_use = QPushButton("Use for License Generation")
-        btn_use.setStyleSheet(button_stylesheet("primary"))
-        btn_use.clicked.connect(self._use_for_generation)
-        handoff.addWidget(btn_use)
-        handoff.addStretch()
-        load_card.body_layout.addLayout(handoff)
 
         # Validate controls live only on this panel (not under Generate)
         val_card = StepCard(step=2, title="Validate Keypair")

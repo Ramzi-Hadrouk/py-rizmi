@@ -113,3 +113,41 @@ def test_validate_only_on_validate_tab(qtbot: QtBot) -> None:
     load_buttons = [b.text() for b in load_page.findChildren(QPushButton)]
     assert "Validate Keypair" in load_buttons
     assert view.btn_validate.parentWidget() is not None
+
+
+def test_generate_tab_shows_algorithm_help_text(qtbot: QtBot) -> None:
+    """Test that Generate tab displays help text about RSA algorithm and passphrase."""
+    from PyQt6.QtWidgets import QLabel
+
+    view = KeyManagerTab()
+    qtbot.addWidget(view)
+
+    view._set_mode("generate")
+    gen_page = view.stack.widget(0)
+    assert gen_page is not None
+
+    # Find all labels in the Generate page
+    labels = [l.text() for l in gen_page.findChildren(QLabel)]
+    help_texts = [l for l in labels if "RSA algorithm" in l and "AES encryption" in l]
+
+    assert len(help_texts) > 0, "Help text about RSA algorithm and AES encryption not found"
+
+
+def test_use_for_generation_button_only_in_generate_tab(qtbot: QtBot) -> None:
+    """Test that 'Use for License Generation' button only appears in Generate tab."""
+    view = KeyManagerTab()
+    qtbot.addWidget(view)
+
+    # Check Generate tab has the button
+    view._set_mode("generate")
+    gen_page = view.stack.widget(0)
+    assert gen_page is not None
+    gen_buttons = [b.text() for b in gen_page.findChildren(QPushButton)]
+    assert "Use for License Generation" in gen_buttons
+
+    # Check Load/Validate tab does NOT have the button
+    view._set_mode("load")
+    load_page = view.stack.widget(1)
+    assert load_page is not None
+    load_buttons = [b.text() for b in load_page.findChildren(QPushButton)]
+    assert "Use for License Generation" not in load_buttons
