@@ -2,103 +2,85 @@
 from __future__ import annotations
 
 from typing import List
+
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QScrollArea, QFrame
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
 )
 from PyQt6.QtCore import Qt
-from ..theme import Color
+
+from ..theme import button_stylesheet, input_stylesheet
+
 
 class DynamicListWidget(QWidget):
-    """A self-contained widget for managing a list of string values.
-    
-    Each row has an Entry plus a remove button.
-    A single *Add* button appends a new blank row.
+    """Manage a list of string values without nested scroll areas.
+
+    Parent views already scroll; rows grow in-place for predictable desktop UX.
     """
-    
+
     def __init__(self, label: str = "Feature", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._label = label
         self._rows: list[dict[str, QWidget]] = []
         self._build()
-        
+
     def _build(self) -> None:
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(10)
-        
-        # Scroll area for rows
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setStyleSheet("background-color: transparent;")
-        
+        main_layout.setSpacing(8)
+
         self.container = QWidget()
-        self.container.setStyleSheet("background-color: transparent;")
         self.container_layout = QVBoxLayout(self.container)
         self.container_layout.setContentsMargins(0, 0, 0, 0)
         self.container_layout.setSpacing(5)
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        
-        self.scroll_area.setWidget(self.container)
-        main_layout.addWidget(self.scroll_area)
-        
-        # Add button
+        main_layout.addWidget(self.container)
+
         self.btn_add = QPushButton(f"+ Add {self._label}")
-        self.btn_add.setFixedWidth(120)
+        self.btn_add.setMinimumWidth(120)
+        self.btn_add.setStyleSheet(button_stylesheet("secondary"))
+        self.btn_add.setAccessibleName(f"Add {self._label}")
         main_layout.addWidget(self.btn_add, alignment=Qt.AlignmentFlag.AlignLeft)
         self.btn_add.clicked.connect(lambda: self.add_row())
-        
-        self.add_row()
-        
+
     def add_row(self, value: str = "") -> None:
         row_widget = QWidget()
         row_layout = QHBoxLayout(row_widget)
         row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.setSpacing(10)
-        
+        row_layout.setSpacing(8)
+
         entry = QLineEdit(value)
-        entry.setMinimumWidth(250)
-        entry.setStyleSheet(f"background-color: white; color: {Color.TEXT}; padding: 4px 6px; border: 1px solid {Color.BORDER}; border-radius: 4px;")
+        entry.setMinimumWidth(200)
+        entry.setPlaceholderText(f"{self._label} name")
+        entry.setStyleSheet(input_stylesheet())
+        entry.setAccessibleName(self._label)
         row_layout.addWidget(entry)
-        
-        btn_rm = QPushButton("\u2715")
-        btn_rm.setFixedSize(30, 30)
-        btn_rm.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Color.ERROR};
-                color: white;
-                border: none;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {Color.ERROR_HOVER};
-            }}
-        """)
-        
-        row_dict = {"widget": row_widget, "entry": entry}
+
+        btn_rm = QPushButton("Remove")
+        btn_rm.setMinimumHeight(28)
+        btn_rm.setStyleSheet(button_stylesheet("ghost"))
+        btn_rm.setAccessibleName(f"Remove {self._label}")
+
+        row_dict: dict[str, QWidget] = {"widget": row_widget, "entry": entry}
         btn_rm.clicked.connect(lambda: self._remove_row(row_dict))
         row_layout.addWidget(btn_rm)
-        
+
         self.container_layout.addWidget(row_widget)
         self._rows.append(row_dict)
-        
+
     def _remove_row(self, row: dict[str, QWidget]) -> None:
         if row not in self._rows:
             return
         self._rows.remove(row)
         row["widget"].setParent(None)
         row["widget"].deleteLater()
-        
-        if not self._rows:
-            self.add_row()
-            
+
     def get_values(self) -> List[str]:
         return [
             r["entry"].text().strip()  # type: ignore[attr-defined]
             for r in self._rows
             if r["entry"].text().strip()  # type: ignore[attr-defined]
         ]
-        
+
     def set_values(self, values: List[str]) -> None:
         while self._rows:
             row = self._rows.pop(0)
@@ -106,8 +88,6 @@ class DynamicListWidget(QWidget):
             row["widget"].deleteLater()
         for val in values:
             self.add_row(val)
-        if not self._rows:
-            self.add_row()
-            
+
     def clear(self) -> None:
         self.set_values([])

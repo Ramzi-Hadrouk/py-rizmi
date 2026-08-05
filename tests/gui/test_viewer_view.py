@@ -26,15 +26,20 @@ def test_viewer_view_valid_license(qtbot: QtBot) -> None:
         "iat": int(now.timestamp())
     }
     
+    mock_payload = MagicMock()
+    mock_payload.in_grace_period = False
+
     mock_validator = MagicMock()
     mock_validator.decode_token.return_value = mock_data
-    
+    mock_validator.validate.return_value = mock_payload
+
     with patch("py_rizmi.gui.views.viewer_view.LicenseValidator.from_file", return_value=mock_validator):
         with patch("builtins.open", mock_open(read_data="dummy.jwt.token")):
             view._on_view()
-            
+
     assert "Decoded successfully" in view.lbl_status.text()
-    
+    assert "Signature valid" in view.lbl_verify.text()
+
     # Check the expiry row label (last row in the form layout)
     item = view.form_layout.itemAt(view.form_layout.rowCount() - 1, QFormLayout.ItemRole.FieldRole)
     assert item is not None
@@ -47,28 +52,30 @@ def test_viewer_view_expired_license(qtbot: QtBot) -> None:
     """Test ViewerTab with an expired license."""
     view = ViewerTab()
     qtbot.addWidget(view)
-    
+
     view.pub_entry.setText("dummy_pub.pem")
     view.lic_entry.setText("dummy.lic")
-    
+
     now = datetime.now(timezone.utc)
     past = now - timedelta(days=10)
-    
+
     mock_data = {
         "client": "Test Client",
         "exp": int(past.timestamp()),
         "iat": int((past - timedelta(days=5)).timestamp())
     }
-    
+
     mock_validator = MagicMock()
     mock_validator.decode_token.return_value = mock_data
-    
+    mock_validator.validate.side_effect = ValueError("expired")
+
     with patch("py_rizmi.gui.views.viewer_view.LicenseValidator.from_file", return_value=mock_validator):
         with patch("builtins.open", mock_open(read_data="dummy.jwt.token")):
             view._on_view()
-            
+
     assert "Decoded successfully" in view.lbl_status.text()
-    
+    assert "expired" in view.lbl_verify.text().lower()
+
     item = view.form_layout.itemAt(view.form_layout.rowCount() - 1, QFormLayout.ItemRole.FieldRole)
     assert item is not None
     lbl_v = cast(QLabel, item.widget())
