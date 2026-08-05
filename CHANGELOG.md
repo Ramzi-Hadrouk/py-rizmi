@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.5] - 2026-08-05
+
+### Added
+- Key Management Generate tab now displays small helper text explaining RSA key size options and that an optional passphrase protects the private key with AES encryption.
+
+### Fixed
+- Removed the "Use for License Generation" button from the Validate Keypair tab so validation remains focused on key matching only.
+- Improved GUI test clarity and lint compliance for the KeyManager feature.
+
+---
+
 ## [1.4.4] - 2026-07-27
 
 ### Added
