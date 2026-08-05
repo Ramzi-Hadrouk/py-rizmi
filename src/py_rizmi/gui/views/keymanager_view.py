@@ -50,26 +50,27 @@ class KeyManagerTab(QWidget):
         title.setObjectName("PageTitle")
         self.content_layout.addWidget(title)
         subtitle = QLabel(
-            "Generate or load an RSA keypair, validate it, then send it to License Generation."
+            "Generate a new RSA keypair, or switch to Validate Keypair to load "
+            "existing keys and confirm they match — then send a key to License Generation."
         )
         subtitle.setObjectName("PageSubtitle")
         subtitle.setWordWrap(True)
         self.content_layout.addWidget(subtitle)
 
-        self._build_source_card()
-        self._build_validate_card()
+        self._build_mode_switcher()
+        self.stack = QStackedWidget()
+        self.content_layout.addWidget(self.stack)
+        self._build_generate_panel()
+        self._build_load_panel()
 
-    def _build_source_card(self) -> None:
-        card = StepCard(step=1, title="Key Source")
-        self.content_layout.addWidget(card)
-
+    def _build_mode_switcher(self) -> None:
         switcher = QFrame()
         switcher_layout = QHBoxLayout(switcher)
-        switcher_layout.setContentsMargins(0, 0, 0, 14)
+        switcher_layout.setContentsMargins(0, 0, 0, 4)
         switcher_layout.setSpacing(0)
 
         self.btn_gen_mode = QPushButton("Generate New Keypair")
-        self.btn_load_mode = QPushButton("Load Existing Keys")
+        self.btn_load_mode = QPushButton("Validate Keypair")
 
         style = f"""
             QPushButton {{
@@ -97,21 +98,15 @@ class KeyManagerTab(QWidget):
         self.btn_load_mode.setCheckable(True)
         self.btn_gen_mode.setChecked(True)
         self.btn_gen_mode.setAccessibleName("Generate new keypair mode")
-        self.btn_load_mode.setAccessibleName("Load existing keys mode")
+        self.btn_load_mode.setAccessibleName("Validate keypair mode")
 
         switcher_layout.addWidget(self.btn_gen_mode)
         switcher_layout.addWidget(self.btn_load_mode)
         switcher_layout.addStretch()
-        card.body_layout.addWidget(switcher)
-
-        self.stack = QStackedWidget()
-        card.body_layout.addWidget(self.stack)
+        self.content_layout.addWidget(switcher)
 
         self.btn_gen_mode.clicked.connect(lambda: self._set_mode("generate"))
         self.btn_load_mode.clicked.connect(lambda: self._set_mode("load"))
-
-        self._build_generate_panel()
-        self._build_load_panel()
 
     def _set_mode(self, mode: str) -> None:
         self._active_source = mode
@@ -127,8 +122,12 @@ class KeyManagerTab(QWidget):
     def _build_generate_panel(self) -> None:
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, 8, 0, 0)
         layout.setSpacing(10)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        card = StepCard(step=1, title="Generate New Keypair")
+        layout.addWidget(card)
 
         ctrl = QHBoxLayout()
         lbl_size = QLabel("Key Size:")
@@ -157,14 +156,14 @@ class KeyManagerTab(QWidget):
         btn_gen.setAccessibleName("Generate keypair")
         btn_gen.clicked.connect(self._on_generate)
         ctrl.addWidget(btn_gen)
-        layout.addLayout(ctrl)
+        card.body_layout.addLayout(ctrl)
 
         self.lbl_gen_info = QLabel("")
         self.lbl_gen_info.setWordWrap(True)
-        layout.addWidget(self.lbl_gen_info)
+        card.body_layout.addWidget(self.lbl_gen_info)
 
         pem_layout = QHBoxLayout()
-        layout.addLayout(pem_layout)
+        card.body_layout.addLayout(pem_layout)
 
         def _make_pem_card(
             title: str,
@@ -217,27 +216,31 @@ class KeyManagerTab(QWidget):
         self.btn_use_for_gen.clicked.connect(self._use_for_generation)
         handoff.addWidget(self.btn_use_for_gen)
         handoff.addStretch()
-        layout.addLayout(handoff)
+        card.body_layout.addLayout(handoff)
 
         self.stack.addWidget(panel)
 
     def _build_load_panel(self) -> None:
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(0, 8, 0, 0)
+        layout.setSpacing(12)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        load_card = StepCard(step=1, title="Load Keys")
+        layout.addWidget(load_card)
 
         lbl_tip = QLabel(
             "Browse for .pem files on disk, or paste PEM content from the clipboard."
         )
         lbl_tip.setStyleSheet(f"color: {Color.FG_MUTED};")
         lbl_tip.setWordWrap(True)
-        layout.addWidget(lbl_tip)
+        load_card.body_layout.addWidget(lbl_tip)
 
         def _make_load_row(title: str) -> tuple[QLineEdit, QPushButton, QPushButton]:
             lbl = QLabel(title)
             lbl.setStyleSheet("font-weight: bold;")
-            layout.addWidget(lbl)
+            load_card.body_layout.addWidget(lbl)
 
             row = QHBoxLayout()
             entry = QLineEdit()
@@ -254,7 +257,7 @@ class KeyManagerTab(QWidget):
             btn_paste.setMinimumWidth(70)
             row.addWidget(btn_browse)
             row.addWidget(btn_paste)
-            layout.addLayout(row)
+            load_card.body_layout.addLayout(row)
             return entry, btn_browse, btn_paste
 
         self.priv_entry, self.priv_btn_browse, self.priv_btn_paste = _make_load_row(
@@ -264,7 +267,7 @@ class KeyManagerTab(QWidget):
         div = QFrame()
         div.setFixedHeight(1)
         div.setStyleSheet(f"background-color: {Color.BORDER};")
-        layout.addWidget(div)
+        load_card.body_layout.addWidget(div)
 
         self.pub_entry, self.pub_btn_browse, self.pub_btn_paste = _make_load_row(
             "Public Key File:"
@@ -281,20 +284,18 @@ class KeyManagerTab(QWidget):
         btn_use.clicked.connect(self._use_for_generation)
         handoff.addWidget(btn_use)
         handoff.addStretch()
-        layout.addLayout(handoff)
+        load_card.body_layout.addLayout(handoff)
 
-        self.stack.addWidget(panel)
-
-    def _build_validate_card(self) -> None:
-        card = StepCard(step=2, title="Validate Keypair")
-        self.content_layout.addWidget(card)
+        # Validate controls live only on this panel (not under Generate)
+        val_card = StepCard(step=2, title="Validate Keypair")
+        layout.addWidget(val_card)
 
         lbl_desc = QLabel(
             "Confirm that the private and public keys belong to the same RSA keypair."
         )
         lbl_desc.setStyleSheet(f"color: {Color.FG_MUTED};")
         lbl_desc.setWordWrap(True)
-        card.body_layout.addWidget(lbl_desc)
+        val_card.body_layout.addWidget(lbl_desc)
 
         pw_row = QHBoxLayout()
         lbl_val_pw = QLabel("Private Key Passphrase:")
@@ -308,24 +309,27 @@ class KeyManagerTab(QWidget):
         self.val_pw_entry.setAccessibleName("Validation passphrase")
         pw_row.addWidget(lbl_val_pw)
         pw_row.addWidget(self.val_pw_entry, stretch=1)
-        card.body_layout.addLayout(pw_row)
+        val_card.body_layout.addLayout(pw_row)
 
         act_row = QHBoxLayout()
         act_row.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        btn_val = QPushButton("Validate Keypair")
-        btn_val.setMinimumHeight(36)
-        btn_val.setMinimumWidth(160)
-        btn_val.setStyleSheet(button_stylesheet("primary"))
-        btn_val.clicked.connect(self._on_validate)
-        act_row.addWidget(btn_val)
+        self.btn_validate = QPushButton("Validate Keypair")
+        self.btn_validate.setMinimumHeight(36)
+        self.btn_validate.setMinimumWidth(160)
+        self.btn_validate.setStyleSheet(button_stylesheet("primary"))
+        self.btn_validate.setAccessibleName("Validate keypair")
+        self.btn_validate.clicked.connect(self._on_validate)
+        act_row.addWidget(self.btn_validate)
 
         self.lbl_val_res = QLabel("")
         self.lbl_val_res.setStyleSheet("font-weight: bold; font-size: 13px;")
         self.lbl_val_res.setWordWrap(True)
         act_row.addWidget(self.lbl_val_res, stretch=1)
 
-        card.body_layout.addLayout(act_row)
+        val_card.body_layout.addLayout(act_row)
+
+        self.stack.addWidget(panel)
 
     def _get_private_pem(self) -> str:
         return self.txt_priv.toPlainText().strip()
@@ -376,7 +380,6 @@ class KeyManagerTab(QWidget):
             self.txt_pub.setPlainText(pub_pem)
             self.lbl_gen_info.setText(f"{key_size}-bit RSA keypair ready")
             self.lbl_gen_info.setStyleSheet(f"color: {Color.SUCCESS};")
-            self.lbl_val_res.setText("")
             if self.app:
                 self.app.status(f"{key_size}-bit keypair generated", "success")
         except Exception as exc:
@@ -515,20 +518,15 @@ class KeyManagerTab(QWidget):
         self.pub_entry.setText("Pasted key held in memory (not written to disk)")
 
     def _on_validate(self) -> None:
-        if self._active_source == "generate":
-            priv_pem = self._get_private_pem()
-            pub_pem = self._get_public_pem()
-        else:
-            priv_pem = self._get_load_priv_pem()
-            pub_pem = self._get_load_pub_pem()
+        """Validate keys loaded in the Validate Keypair panel only."""
+        priv_pem = self._get_load_priv_pem()
+        pub_pem = self._get_load_pub_pem()
 
         if not priv_pem or not pub_pem:
-            self._set_result("No keys available in active panel", Color.WARNING)
+            self._set_result("No keys available — browse or paste both keys first", Color.WARNING)
             return
 
         pw = self.val_pw_entry.text() or None
-        if self._active_source == "generate" and not pw:
-            pw = self.gen_pw_entry.text() or None
 
         self._busy(True)
         try:

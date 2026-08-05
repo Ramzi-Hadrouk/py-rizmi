@@ -1,4 +1,6 @@
 from unittest.mock import MagicMock, patch
+
+from PyQt6.QtWidgets import QPushButton
 from pytestqt.qtbot import QtBot
 
 from py_rizmi.gui.views.keymanager_view import KeyManagerTab
@@ -8,11 +10,14 @@ def test_keymanager_generate_keypair(qtbot: QtBot) -> None:
     """Test generating a keypair populates text areas."""
     view = KeyManagerTab()
     qtbot.addWidget(view)
-    
-    with patch("py_rizmi.core.keypair.KeyPairManager.generate_keypair", return_value=("private_pem_data", "public_pem_data")):
-        view.btn_gen_mode.setChecked(True)
+
+    with patch(
+        "py_rizmi.core.keypair.KeyPairManager.generate_keypair",
+        return_value=("private_pem_data", "public_pem_data"),
+    ):
+        view._set_mode("generate")
         view._on_generate()
-        
+
     assert "private_pem_data" in view.txt_priv.toPlainText()
     assert "public_pem_data" in view.txt_pub.toPlainText()
     assert "ready" in view.lbl_gen_info.text().lower()
@@ -29,21 +34,31 @@ def test_keymanager_paste_holds_in_memory(qtbot: QtBot) -> None:
     view = KeyManagerTab()
     qtbot.addWidget(view)
 
-    view.btn_load_mode.setChecked(True)
+    view._set_mode("load")
 
-    priv_pem = "-----BEGIN PRIVATE KEY-----\ndummy_pasted_priv_key\n-----END PRIVATE KEY-----"
-    pub_pem = "-----BEGIN PUBLIC KEY-----\ndummy_pasted_pub_key\n-----END PUBLIC KEY-----"
+    priv_pem = (
+        "-----BEGIN PRIVATE KEY-----\ndummy_pasted_priv_key\n-----END PRIVATE KEY-----"
+    )
+    pub_pem = (
+        "-----BEGIN PUBLIC KEY-----\ndummy_pasted_pub_key\n-----END PUBLIC KEY-----"
+    )
 
     mock_cb = MagicMock()
     mock_cb.text.return_value = priv_pem
-    with patch("py_rizmi.gui.views.keymanager_view.QApplication.clipboard", return_value=mock_cb):
+    with patch(
+        "py_rizmi.gui.views.keymanager_view.QApplication.clipboard",
+        return_value=mock_cb,
+    ):
         view._paste_priv()
 
     assert "dummy_pasted_priv_key" in view._pasted_pem["priv"]
     assert "memory" in view.priv_entry.text()
 
     mock_cb.text.return_value = pub_pem
-    with patch("py_rizmi.gui.views.keymanager_view.QApplication.clipboard", return_value=mock_cb):
+    with patch(
+        "py_rizmi.gui.views.keymanager_view.QApplication.clipboard",
+        return_value=mock_cb,
+    ):
         view._paste_pub()
 
     assert "dummy_pasted_pub_key" in view._pasted_pem["pub"]
@@ -54,19 +69,47 @@ def test_keymanager_validate_mismatch(qtbot: QtBot) -> None:
     """Test validate reports mismatch for unrelated keys."""
     view = KeyManagerTab()
     qtbot.addWidget(view)
-    
-    view.btn_load_mode.setChecked(True)
-    
-    # Setup mismatched keys
+
+    view._set_mode("load")
+
     view._pasted_pem["priv"] = "priv_key_data"
     view._pasted_pem["pub"] = "pub_key_data"
     view.priv_entry.setText("memory")
     view.pub_entry.setText("memory")
-    view._active_source = "load"
-    
-    with patch("py_rizmi.core.keypair.KeyPairManager.validate_private_key", return_value=True):
-        with patch("py_rizmi.core.keypair.KeyPairManager.validate_public_key", return_value=True):
-            with patch("py_rizmi.core.keypair.KeyPairManager.verify_keypair", return_value=False):
+
+    with patch(
+        "py_rizmi.core.keypair.KeyPairManager.validate_private_key", return_value=True
+    ):
+        with patch(
+            "py_rizmi.core.keypair.KeyPairManager.validate_public_key",
+            return_value=True,
+        ):
+            with patch(
+                "py_rizmi.core.keypair.KeyPairManager.verify_keypair",
+                return_value=False,
+            ):
                 view._on_validate()
-                
+
     assert "NOT match" in view.lbl_val_res.text()
+
+
+def test_validate_only_on_validate_tab(qtbot: QtBot) -> None:
+    """Validate UI belongs to Validate Keypair tab, not Generate."""
+    view = KeyManagerTab()
+    qtbot.addWidget(view)
+
+    assert view.btn_load_mode.text() == "Validate Keypair"
+    assert "Load Existing" not in view.btn_load_mode.text()
+
+    view._set_mode("generate")
+    gen_page = view.stack.widget(0)
+    assert gen_page is not None
+    gen_buttons = [b.text() for b in gen_page.findChildren(QPushButton)]
+    assert "Validate Keypair" not in gen_buttons
+
+    view._set_mode("load")
+    load_page = view.stack.widget(1)
+    assert load_page is not None
+    load_buttons = [b.text() for b in load_page.findChildren(QPushButton)]
+    assert "Validate Keypair" in load_buttons
+    assert view.btn_validate.parentWidget() is not None
