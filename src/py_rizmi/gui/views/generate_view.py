@@ -569,7 +569,10 @@ class GenerateTab(QWidget):
             return
 
         save_path, _ = QFileDialog.getSaveFileName(
-            self, "Save License File", "", "License files (*.lic);;All files (*.*)"
+            self,
+            "Save License File",
+            "license.lic",
+            "License files (*.lic);;All files (*.*)",
         )
         if not save_path:
             return
