@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **License Swap Protocol**: Core cryptographic protocol (`LicenseSwapPayload`, `canonicalize_payload`, `create_swap_request`, `sign_swap_request`, `verify_swap_authorization`) for authorizing license replacement without exposing private keys.
+- **CLI Commands**: `rizmi license sign-swap` in `cli/commands/swap_cmd.py` to locally sign swap request files, and `rizmi license verify-swap` to verify signed license swap authorization `.rzswap` files.
+- **PyQt6 GUI View**: Dedicated `License Swap` tab (`LicenseSwapTab` in `gui/views/swap_view.py`) allowing interactive selection of swap request JSON files and local signing with RSA private keys.
+- **Contract & Security Unit Tests**: Integration contract tests simulating Django Phase 2 validation calls against dict and string JSON inputs, along with strict private key secrecy assertions.
+
+
+
 ---
 
 ## [1.4.5] - 2026-08-05

@@ -11,6 +11,12 @@ The following symbols are exported via `py_rizmi.__all__` and are the project's 
 - `KeyPair` (re-export of `KeyPairManager`)
 - `MachineFingerprint` (re-export of `HardwareIdentifier`)
 - `LicensePayload`
+- `LicenseSwapPayload` (and alias `ReplacementAuthorizationPayload`)
+- `create_swap_request`
+- `sign_swap_request`
+- `verify_swap_authorization`
+
+
 
 Changes to these symbols follow strict SemVer:
 

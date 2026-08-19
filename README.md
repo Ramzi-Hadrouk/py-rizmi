@@ -264,6 +264,10 @@ rizmi gui --help
 | `rizmi license issue` | Sign and write a `.lic` token file |
 | `rizmi license validate <file.lic>` | Validate signature, expiry, and HWID |
 | `rizmi license inspect <file.lic>` | Decode and display all payload fields |
+| `rizmi license sign-swap` | Sign a license swap request file locally using RSA private key |
+| `rizmi license verify-swap <auth.rzswap>` | Verify a signed license swap authorization file against public key and licenses |
+
+
 
 ### Machine Fingerprint — `rizmi machine-id`
 
@@ -411,6 +415,43 @@ and may raise `clock_tampering` alongside the standard validation errors.
 Pass `enable_clock_guard=False` only for diagnostics or tests.
 The direct `LicenseValidator` API also accepts an optional `clock_guard`
 argument for the same behavior.
+
+### License Swap Authorization
+
+Applications requiring authorized license replacement (e.g. Django web backend integration) use `verify_swap_authorization` to cryptographically verify replacement payloads without handling private keys:
+
+```python
+from py_rizmi import (
+    create_swap_request,
+    sign_swap_request,
+    verify_swap_authorization,
+)
+
+# 1. App/Server creates a short-lived swap request payload
+payload = create_swap_request(
+    current_license="<current-license-token>",
+    new_license="<new-license-token>",
+    valid_minutes=60,
+)
+
+# 2. License owner signs locally with private key (CLI / GUI)
+authorization_envelope = sign_swap_request(payload, private_key_pem)
+
+# 3. Application server verifies license swap authorization
+is_valid, reason, verified_payload = verify_swap_authorization(
+    authorization_data=authorization_envelope,  # accepts dict or JSON string
+    public_key_pem=public_key_pem,
+    expected_current_license="<current-license-token>",
+    expected_new_license="<new-license-token>",
+)
+
+if is_valid and verified_payload is not None:
+    print("Swap authorization verified successfully:", verified_payload.request_id)
+else:
+    print("Verification failed:", reason)
+```
+
+
 
 ---
 
