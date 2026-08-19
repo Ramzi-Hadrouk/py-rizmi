@@ -14,8 +14,8 @@ from py_rizmi.models.license_payload import LicensePayload
 from py_rizmi.models.swap_payload import (
     FIXED_OPERATION,
     PROTOCOL_VERSION,
-    LicenseSwapPayload,
 )
+
 
 
 @pytest.fixture
