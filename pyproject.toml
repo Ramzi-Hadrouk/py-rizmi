@@ -5,7 +5,8 @@ build-backend = "hatchling.build"
 [project]
 name = "py-rizmi"
 dynamic = ["version"]
-description = "Offline RSA-signed license management — CLI, GUI, and Python API."
+description = "Offline-first licensing toolkit for cryptographically signed, hardware-bound Python software protection."
+
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",

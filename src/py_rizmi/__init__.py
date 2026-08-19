@@ -1,4 +1,5 @@
-"""py-rizmi — Offline RSA-signed license management."""
+"""py-rizmi — Offline-first licensing toolkit for cryptographically signed, hardware-bound Python software protection."""
+
 
 try:
     from py_rizmi._version import __version__

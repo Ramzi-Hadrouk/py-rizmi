@@ -32,7 +32,8 @@ case "$MODE" in
             --product-name="$APP_NAME" \
             --file-version="$VERSION" \
             --product-version="$VERSION" \
-            --file-description="Offline RSA-signed license management" \
+            --file-description="Offline-first licensing toolkit for cryptographically signed, hardware-bound Python software protection" \
+
             --copyright="MIT" \
             main.py
 
@@ -62,7 +63,8 @@ case "$MODE" in
             --product-name="$APP_NAME" \
             --file-version="$VERSION" \
             --product-version="$VERSION" \
-            --file-description="Offline RSA-signed license management" \
+            --file-description="Offline-first licensing toolkit for cryptographically signed, hardware-bound Python software protection" \
+
             --copyright="MIT" \
             main.py
 

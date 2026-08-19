@@ -36,7 +36,7 @@ err_console = Console(stderr=True)
 
 app = typer.Typer(
     name="rizmi",
-    help="Offline RSA-signed license management — issue, validate, and inspect licenses.",
+    help="Offline-first licensing toolkit for cryptographically signed, hardware-bound Python software protection.",
     no_args_is_help=True,
     rich_markup_mode="rich",
     pretty_exceptions_show_locals=False,
@@ -45,8 +45,9 @@ app = typer.Typer(
 
 # Register sub-apps
 app.add_typer(keys_app,       name="keys",       help="RSA keypair generation and management.")
-app.add_typer(license_app,    name="license",    help="License file issuance, validation, and inspection.")
+app.add_typer(license_app,    name="license",    help="License file issuance, validation, inspection, and swap authorization.")
 app.add_typer(machine_id_app, name="machine-id", help="Get this machine's hardware fingerprint (HWID).")
+
 
 
 # ─── gui command ─────────────────────────────────────────────────────────────
@@ -111,7 +112,7 @@ def root(
         ),
     ] = None,
 ) -> None:
-    """[bold cyan]rizmi[/] — offline RSA-signed license management.
+    """[bold cyan]rizmi[/] — offline-first licensing toolkit for cryptographically signed software protection.
 
     Run [bold]rizmi COMMAND --help[/] for detailed usage of any command.
     """
@@ -126,7 +127,7 @@ def _print_banner() -> None:
     console.print(
         Panel(
             f"[bold cyan]rizmi[/]  [dim]v{__version__}[/]\n"
-            "[dim]Offline RSA-signed license management[/]",
+            "[dim]Offline-first licensing toolkit for cryptographically signed software protection[/]",
             border_style="cyan",
             padding=(1, 4),
             expand=False,
@@ -142,23 +143,26 @@ def _print_help() -> None:
     table.add_column("[bold]Command[/]", style="bold cyan", no_wrap=True)
     table.add_column("[bold]Description[/]", style="white")
 
-    table.add_row("keys generate",    "Generate a new RSA keypair")
-    table.add_row("keys inspect",     "Inspect a PEM key file (type, size, fingerprint)")
-    table.add_row("keys verify",      "Verify that a private/public key pair matches")
-    table.add_row("",                 "")
-    table.add_row("license issue",    "Sign and issue a new .lic license file")
-    table.add_row("license validate", "Validate a .lic against public key + this machine's HWID")
-    table.add_row("license inspect",  "Decode and inspect a .lic without HWID/expiry check")
-    table.add_row("",                 "")
-    table.add_row("machine-id",       "Print this machine's hardware fingerprint (HWID)")
-    table.add_row("",                 "")
-    table.add_row("gui",              "Launch the graphical interface [dim](requires [gui] extra)[/dim]")
+    table.add_row("keys generate",        "Generate a new RSA keypair")
+    table.add_row("keys inspect",         "Inspect a PEM key file (type, size, fingerprint)")
+    table.add_row("keys verify",          "Verify that a private/public key pair matches")
+    table.add_row("",                     "")
+    table.add_row("license issue",        "Sign and issue a new .lic license file")
+    table.add_row("license validate",     "Validate a .lic against public key + this machine's HWID")
+    table.add_row("license inspect",      "Decode and inspect a .lic without HWID/expiry check")
+    table.add_row("license sign-swap",    "Locally sign a license swap request file")
+    table.add_row("license verify-swap",  "Verify a signed license swap authorization file")
+    table.add_row("",                     "")
+    table.add_row("machine-id",           "Print this machine's hardware fingerprint (HWID)")
+    table.add_row("",                     "")
+    table.add_row("gui",                  "Launch the graphical interface [dim](requires [gui] extra)[/dim]")
 
     console.print(table)
     console.print(
         "  [dim]Run [bold]rizmi COMMAND --help[/] for full options of any command.[/]"
     )
     console.print()
+
 
 
 # ─── entry point ─────────────────────────────────────────────────────────────
