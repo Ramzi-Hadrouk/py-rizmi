@@ -10,6 +10,12 @@ from py_rizmi.core.hwid import HardwareIdentifier as MachineFingerprint
 from py_rizmi.core.keypair import KeyPairManager as KeyPair
 from py_rizmi.core.license_issuer import LicenseIssuer
 from py_rizmi.core.license_validator import LicenseValidator
+from py_rizmi.core.revocation import (
+    RevocationList,
+    create_revocation_list,
+    sign_revocation_list,
+    verify_revocation_list,
+)
 from py_rizmi.core.runtime_guard import LicenseWatchdog, LicenseWatchdogError
 from py_rizmi.core.swap_auth import (
     create_replacement_authorization_payload,
@@ -28,6 +34,10 @@ __all__ = [
     "LicenseIssuer",
     "LicenseWatchdog",
     "LicenseWatchdogError",
+    "RevocationList",
+    "create_revocation_list",
+    "sign_revocation_list",
+    "verify_revocation_list",
     "KeyPair",
     "MachineFingerprint",
     "LicensePayload",

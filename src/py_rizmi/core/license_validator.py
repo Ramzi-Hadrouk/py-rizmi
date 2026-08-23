@@ -7,6 +7,7 @@ from typing import Any, Dict, Protocol
 import jwt
 
 from py_rizmi.core.hwid import HardwareIdentifier
+from py_rizmi.core.revocation import RevocationList, REASON_REVOKED
 from py_rizmi.models.license_payload import LicensePayload
 
 logger = logging.getLogger("license")
@@ -20,6 +21,7 @@ ERROR_MESSAGES: dict[str, str] = {
     "expired": "License has expired.",
     "hwid_mismatch": "Hardware fingerprint mismatch — this license is not issued for this machine.",
     "clock_tampering": "System clock tampering detected.",
+    "revoked": "License has been revoked by the issuer.",
 }
 
 
@@ -32,20 +34,49 @@ class _ClockGuard(Protocol):
 
 
 class LicenseValidator:
-    """Validates JWT license tokens against an RSA public key."""
+    """Validates JWT license tokens against an RSA public key.
+
+    Pass *revocation_list* (a signed CRL envelope from
+    `core.revocation.sign_revocation_list`, dict or JSON string) to also
+    reject licenses whose ``license_id`` appears on it. The list is
+    verified against the same public key before use; a bad signature is
+    rejected loudly (ValueError("revocation_list_invalid")) rather than
+    silently ignored -- an unverifiable list must not disable revocation.
+    """
 
     ALGORITHM = "RS256"
 
-    def __init__(self, public_key: str, clock_guard: _ClockGuard | None = None):
+    def __init__(
+        self,
+        public_key: str,
+        clock_guard: _ClockGuard | None = None,
+        revocation_list: Any | None = None,
+    ) -> None:
         self.public_key = public_key
         self.clock_guard = clock_guard
+        self._crl: RevocationList | None = None
+        if revocation_list is not None:
+            self.set_revocation_list(revocation_list)
 
     @classmethod
     def from_file(
-        cls, public_key_path: str, clock_guard: _ClockGuard | None = None
+        cls,
+        public_key_path: str,
+        clock_guard: _ClockGuard | None = None,
+        revocation_list: Any | None = None,
     ) -> LicenseValidator:
         with open(public_key_path, "r") as f:
-            return cls(f.read(), clock_guard=clock_guard)
+            return cls(f.read(), clock_guard=clock_guard, revocation_list=revocation_list)
+
+    def set_revocation_list(self, revocation_list: Any) -> None:
+        """Install (and verify) a new signed CRL envelope at runtime."""
+        from py_rizmi.core.revocation import verify_revocation_list
+
+        ok, reason, crl = verify_revocation_list(revocation_list, self.public_key)
+        if not ok or crl is None:
+            logger.warning("Rejected revocation list: %s", reason)
+            raise ValueError("revocation_list_invalid")
+        self._crl = crl
 
     def decode_token(self, token: str) -> Dict[str, Any]:
         """Decode a token *without* expiry or HWID checks."""
@@ -107,6 +138,10 @@ class LicenseValidator:
         if payload.schema_version != 1:
             logger.warning(f"License check failed: unsupported_schema ({payload.schema_version})")
             raise ValueError("unsupported_schema")
+
+        if self._crl is not None and self._crl.is_revoked(payload.license_id):
+            logger.warning("License check failed: revoked (%s)", payload.license_id)
+            raise ValueError(REASON_REVOKED)
 
         if check_hwid and payload.hwid.lower() != HardwareIdentifier.get_machine_id().lower():
             logger.warning("License check failed: hwid_mismatch")

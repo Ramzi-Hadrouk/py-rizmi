@@ -21,6 +21,10 @@ from py_rizmi.cli.commands.swap_cmd import (
 )
 from py_rizmi.core.license_issuer import LicenseIssuer
 from py_rizmi.core.license_validator import ERROR_MESSAGES, LicenseValidator
+from py_rizmi.core.revocation import (
+    create_revocation_list,
+    sign_revocation_list,
+)
 from py_rizmi.models.license_payload import LicensePayload
 
 
@@ -265,6 +269,74 @@ def license_issue(
     console.print(
         "  [dim]📦 Deliver [bold yellow]{out}[/] + your [bold green]public_key.pem[/] to the end user.[/]".format(
             out=output
+        )
+    )
+    console.print()
+
+
+@app.command("revoke")
+def license_revoke(
+    private_key: Annotated[
+        Path,
+        typer.Option("--private-key", "-k", help="Path to the RSA private key PEM."),
+    ],
+    license_ids: Annotated[
+        Optional[List[str]],
+        typer.Argument(metavar="LICENSE_ID", help="License ID(s) to revoke. Omit to publish a clean (un-revoke) list."),
+    ] = None,
+    key_passphrase: Annotated[
+        Optional[str],
+        typer.Option(
+            "--key-passphrase",
+            help="Passphrase for an encrypted private key (or set RIZMI_KEY_PASSPHRASE).",
+            envvar="RIZMI_KEY_PASSPHRASE",
+        ),
+    ] = None,
+    output: Annotated[
+        Path,
+        typer.Option("--output", "-o", help="Output path for the signed CRL JSON.", show_default=True),
+    ] = Path("revocation_list.json"),
+    next_update_hours: Annotated[
+        int,
+        typer.Option(
+            "--next-update-hours",
+            help="Advisory refresh horizon embedded in the list.",
+            show_default=True,
+        ),
+    ] = 24,
+) -> None:
+    """Publish a signed revocation list revoking the given license ID(s).
+
+    Distribute the output file to your apps and pass it to
+    LicenseValidator(revocation_list=...) — any license whose ID is on
+    the list will fail validation with 'revoked'. Re-publish with an
+    empty ID list to un-revoke everything.
+    """
+    if next_update_hours <= 0:
+        _error(f"--next-update-hours must be positive (got [bold]{next_update_hours}[/]).")
+        raise typer.Exit(1)
+    if not private_key.exists():
+        _error(f"Private key not found: [bold]{private_key}[/]")
+        raise typer.Exit(1)
+
+    cleaned = [lid.strip() for lid in (license_ids or []) if lid.strip()]
+    try:
+        payload = create_revocation_list(cleaned, next_update_hours=next_update_hours)
+        envelope = sign_revocation_list(payload, private_key.read_text(), passphrase=key_passphrase)
+    except Exception as exc:
+        _error(f"Revocation list signing failed: {exc}")
+        raise typer.Exit(2) from exc
+
+    output.write_text(json.dumps(envelope, indent=2))
+    console.print()
+    console.print(
+        Panel(
+            f"[bold green]✓[/] Signed revocation list written to [bold yellow]{output}[/]\n\n"
+            f"[dim]Revoked IDs:[/] {', '.join(cleaned) if cleaned else '[i]none (clean list)[/]'}\n"
+            f"[dim]Next update:[/] {_ts_to_human(payload['next_update'])}\n\n"
+            f"[dim]Distribute this file; validators reject listed licenses with 'revoked'.[/]",
+            border_style="green",
+            padding=(0, 1),
         )
     )
     console.print()

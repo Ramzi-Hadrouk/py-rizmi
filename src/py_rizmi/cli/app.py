@@ -152,6 +152,7 @@ def _print_help() -> None:
     table.add_row("license create-swap-request", "Build a swap request JSON for the author to sign")
     table.add_row("license sign-swap",    "Locally sign a license swap request file")
     table.add_row("license verify-swap",  "Verify a signed license swap authorization file")
+    table.add_row("license revoke",       "Publish a signed revocation list for license IDs")
     table.add_row("",                     "")
     table.add_row("machine-id",           "Print this machine's hardware fingerprint (HWID)")
     table.add_row("",                     "")
