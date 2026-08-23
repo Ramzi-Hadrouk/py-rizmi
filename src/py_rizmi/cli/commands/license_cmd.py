@@ -1,6 +1,7 @@
 """rizmi license — license issuance, validation, and inspection commands."""
 from __future__ import annotations
 
+import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,9 +15,8 @@ from rich.table import Table
 from rich.text import Text
 
 from py_rizmi.cli.commands.swap_cmd import (
-    license_authorize_replacement,
+    license_create_swap_request,
     license_sign_swap,
-    license_verify_replacement,
     license_verify_swap,
 )
 from py_rizmi.core.license_issuer import LicenseIssuer
@@ -34,10 +34,12 @@ err_console = Console(stderr=True)
 
 
 # Register swap commands defined in swap_cmd module
+app.command("create-swap-request")(license_create_swap_request)
 app.command("sign-swap")(license_sign_swap)
 app.command("verify-swap")(license_verify_swap)
-app.command("authorize-replacement", hidden=True)(license_authorize_replacement)
-app.command("verify-replacement", hidden=True)(license_verify_replacement)
+# Backward-compat aliases (hidden)
+app.command("authorize-replacement", hidden=True)(license_sign_swap)
+app.command("verify-replacement", hidden=True)(license_verify_swap)
 
 
 
@@ -45,6 +47,11 @@ app.command("verify-replacement", hidden=True)(license_verify_replacement)
 
 def _error(msg: str) -> None:
     err_console.print(Panel(f"[bold red]✗[/]  {msg}", border_style="red", padding=(0, 1)))
+
+
+def _emit_json(data: dict[str, object]) -> None:
+    """Print *data* as machine-readable JSON on stdout (no Rich markup)."""
+    console.print_json(json.dumps(data, indent=2))
 
 
 def _ts_to_human(ts: int) -> str:
@@ -155,6 +162,16 @@ def license_issue(
         int,
         typer.Option("--exp-days", "-e", help="License validity in days from today.", show_default=True),
     ] = 365,
+    from_json: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--from-json",
+            help="Read the payload spec (client, license_id, hwid, features, ...) "
+                 "from a JSON file instead of individual flags. Explicit flags "
+                 "still override values from the file; iat/exp in the file are "
+                 "ignored (always computed from --exp-days).",
+        ),
+    ] = None,
 ) -> None:
     """Issue and sign a new license file (.lic).
 
@@ -163,6 +180,23 @@ def license_issue(
     to the end user.
     """
     # Validate required options (Optional[str] used for mypy compat; Typer shows them without defaults)
+    if from_json is not None:
+        try:
+            spec = json.loads(from_json.read_text())
+            if not isinstance(spec, dict):
+                raise ValueError("JSON root must be an object")
+        except Exception as exc:
+            _error(f"Could not read payload spec {from_json}: {exc}")
+            raise typer.Exit(1) from exc
+        client = client if client is not None else spec.get("client")
+        license_id = license_id if license_id is not None else spec.get("license_id")
+        hwid = hwid if hwid is not None else spec.get("hwid")
+        features = features if features else spec.get("features")
+        max_clients = max_clients if max_clients != 10 else int(spec.get("max_clients", 10))
+        mode = mode if mode != "offline" else str(spec.get("mode", "offline"))
+        server_url = server_url or str(spec.get("server_url", ""))
+        grace_days = grace_days if grace_days != 14 else int(spec.get("grace_days", 14))
+
     missing = [name for name, val in (("--client", client), ("--license-id", license_id), ("--hwid", hwid)) if val is None]
     if missing:
         _error(f"Missing required option(s): {', '.join(f'[bold]{m}[/]' for m in missing)}")
@@ -250,6 +284,10 @@ def license_validate(
         bool,
         typer.Option("--no-hwid-check", help="Skip hardware fingerprint verification."),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Output the payload as machine-readable JSON."),
+    ] = False,
 ) -> None:
     """Validate a license file against the public key and this machine's HWID.
 
@@ -284,6 +322,12 @@ def license_validate(
 
     hwid_note = "" if not no_hwid_check else "  [dim](HWID check skipped)[/]"
     console.print()
+    if json_output:
+        data = payload.to_dict()
+        data["valid"] = True
+        data["in_grace_period"] = payload.in_grace_period
+        _emit_json(data)
+        return
     console.print(
         Panel(
             f"[bold green]✓  License is valid[/]{hwid_note}",
@@ -305,6 +349,10 @@ def license_inspect(
         Path,
         typer.Option("--public-key", "-k", help="Path to the RSA public key PEM."),
     ],
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Output the payload as machine-readable JSON."),
+    ] = False,
 ) -> None:
     """Decode and inspect a license file without checking HWID or expiry.
 
@@ -327,6 +375,9 @@ def license_inspect(
             raise typer.Exit(2) from exc
 
     console.print()
+    if json_output:
+        _emit_json(payload.to_dict())
+        return
     console.print(
         Panel(
             Text("License Inspection", style="bold cyan"),

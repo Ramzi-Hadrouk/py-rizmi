@@ -24,10 +24,26 @@ err_console = Console(stderr=True)
 
 def _copy_to_clipboard(text: str) -> bool:
     """Attempt to copy *text* to the system clipboard. Returns True on success."""
-    # Try xclip (Linux X11)
-    for cmd in (["xclip", "-selection", "clipboard"], ["xsel", "--clipboard", "--input"], ["pbcopy"]):
+    commands = [
+        ["xclip", "-selection", "clipboard"],          # Linux X11
+        ["xsel", "--clipboard", "--input"],            # Linux X11 (alt)
+        ["wl-copy"],                                    # Linux Wayland
+        ["pbcopy"],                                     # macOS
+    ]
+    if sys.platform == "win32":
+        # clip.exe expects UTF-16LE and appends a newline; PowerShell
+        # Set-Clipboard is cleaner when available.
+        commands.insert(0, [
+            "powershell", "-NoProfile", "-Command",
+            "$input | Set-Clipboard",
+        ])
+        commands.append(["clip"])
+    for cmd in commands:
         try:
-            proc = subprocess.run(cmd, input=text.encode(), capture_output=True, timeout=3)
+            proc = subprocess.run(
+                cmd, input=text.encode("utf-16-le") if cmd[0] == "clip" else text.encode(),
+                capture_output=True, timeout=3,
+            )
             if proc.returncode == 0:
                 return True
         except (FileNotFoundError, subprocess.TimeoutExpired):
@@ -52,6 +68,10 @@ def machine_id(
         bool,
         typer.Option("--copy", "-c", help="Copy the HWID to the system clipboard."),
     ] = False,
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Output as machine-readable JSON."),
+    ] = False,
 ) -> None:
     """Get this machine's hardware fingerprint (HWID).
 
@@ -75,6 +95,12 @@ def machine_id(
     if raw:
         # Plain output for piping: `rizmi machine-id --raw | pbcopy`
         print(hwid)
+        return
+
+    if json_output:
+        import json
+
+        print(json.dumps({"hwid": hwid, "algorithm": "sha256", "platform": sys.platform}))
         return
 
     if copy:

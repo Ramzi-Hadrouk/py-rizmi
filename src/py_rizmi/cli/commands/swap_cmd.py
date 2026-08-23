@@ -9,7 +9,11 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 
-from py_rizmi.core.swap_auth import sign_swap_request, verify_swap_authorization
+from py_rizmi.core.swap_auth import (
+    create_swap_request,
+    sign_swap_request,
+    verify_swap_authorization,
+)
 from py_rizmi.models.swap_payload import LicenseSwapPayload
 
 app = typer.Typer(
@@ -23,6 +27,67 @@ err_console = Console(stderr=True)
 
 def _error(msg: str) -> None:
     err_console.print(Panel(f"[bold red]✗[/]  {msg}", border_style="red", padding=(0, 1)))
+
+
+@app.command("create-swap-request")
+def license_create_swap_request(
+    current_license: Annotated[
+        Path,
+        typer.Option("--current-license", help="Path to the current .lic file."),
+    ],
+    new_license: Annotated[
+        Path,
+        typer.Option("--new-license", help="Path to the replacement .lic file."),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option("--output", "-o", help="Output path for the swap request JSON.", show_default=True),
+    ] = Path("swap_request.json"),
+    request_id: Annotated[
+        Optional[str],
+        typer.Option("--request-id", help="Custom request identifier (default: random UUID)."),
+    ] = None,
+    valid_minutes: Annotated[
+        int,
+        typer.Option("--valid-minutes", help="How long the resulting authorization may stay valid.", show_default=True),
+    ] = 60,
+) -> None:
+    """Generate a license swap request JSON for the license author to sign.
+
+    Run this on a machine where both license files are available, send the
+    output to the author, who signs it with `rizmi license sign-swap`.
+    """
+    for p in (current_license, new_license):
+        if not p.exists():
+            _error(f"File not found: [bold]{p}[/]")
+            raise typer.Exit(1)
+    if valid_minutes <= 0:
+        _error(f"--valid-minutes must be positive (got [bold]{valid_minutes}[/]).")
+        raise typer.Exit(1)
+
+    try:
+        payload = create_swap_request(
+            current_license=current_license.read_text().strip(),
+            new_license=new_license.read_text().strip(),
+            request_id=request_id,
+            valid_minutes=valid_minutes,
+        )
+    except Exception as exc:
+        _error(f"Failed to build swap request: {exc}")
+        raise typer.Exit(2) from exc
+
+    output.write_text(json.dumps(payload.to_dict(), indent=2))
+    console.print()
+    console.print(
+        Panel(
+            f"[bold green]✓[/] Swap request written to [bold yellow]{output}[/]\n\n"
+            f"[dim]request_id:[/] {payload.request_id}\n"
+            f"[dim]Send this file to the license author for signing.[/]",
+            border_style="green",
+            padding=(0, 1),
+        )
+    )
+    console.print()
 
 
 @app.command("sign-swap")
@@ -161,6 +226,6 @@ def license_verify_swap(
     console.print()
 
 
-# Aliases for backward compatibility
+# Backward-compatibility aliases
 license_authorize_replacement = license_sign_swap
 license_verify_replacement = license_verify_swap

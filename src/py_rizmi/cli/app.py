@@ -149,6 +149,7 @@ def _print_help() -> None:
     table.add_row("license issue",        "Sign and issue a new .lic license file")
     table.add_row("license validate",     "Validate a .lic against public key + this machine's HWID")
     table.add_row("license inspect",      "Decode and inspect a .lic without HWID/expiry check")
+    table.add_row("license create-swap-request", "Build a swap request JSON for the author to sign")
     table.add_row("license sign-swap",    "Locally sign a license swap request file")
     table.add_row("license verify-swap",  "Verify a signed license swap authorization file")
     table.add_row("",                     "")

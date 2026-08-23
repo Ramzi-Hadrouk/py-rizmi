@@ -1,10 +1,9 @@
 """rizmi keys — RSA keypair management commands."""
 from __future__ import annotations
 
-import hashlib
 import os
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 from rich import box
@@ -34,23 +33,47 @@ def _success(title: str, content: str) -> None:
     console.print(Panel(content, title=f"[bold green]✓  {title}[/]", border_style="green", padding=(1, 2)))
 
 
-def _load_key_info(path: Path) -> dict[str, str]:
+def _load_key_info(path: Path, password: str | None = None) -> dict[str, str]:
     """Return type + size + fingerprint for any PEM file."""
     pem = path.read_text()
     is_private = "PRIVATE KEY" in pem or "RSA PRIVATE KEY" in pem
-    size = KeyPairManager.get_key_size(pem)
-    # SHA-256 fingerprint of the raw PEM bytes (portable, no DER conversion needed)
-    fingerprint = hashlib.sha256(pem.encode()).hexdigest()
+    size = KeyPairManager.get_key_size(pem, password=password)
+    # DER-based fingerprint: identical keys produce identical fingerprints
+    # regardless of PEM line wrapping or trailing whitespace.
+    fingerprint = _der_fingerprint(pem, password=password)
     return {
         "type": "Private Key" if is_private else "Public Key",
         "size": f"{size} bits" if size else "unknown",
-        "fingerprint": f"SHA-256:{fingerprint[:16]}…{fingerprint[-8:]}",
+        "fingerprint": f"SHA-256:{fingerprint[:16]}…{fingerprint[-8:]}" if fingerprint else "unavailable",
         "valid": str(
-            KeyPairManager.validate_private_key(pem)
+            KeyPairManager.validate_private_key(pem, password=password)
             if is_private
             else KeyPairManager.validate_public_key(pem)
         ),
     }
+
+
+def _der_fingerprint(pem: str, password: str | None = None) -> str | None:
+    """SHA-256 over the DER encoding of the key (whitespace-insensitive)."""
+    import hashlib
+
+    from cryptography.hazmat.primitives import serialization
+
+    from py_rizmi.core.crypto import load_private_key, load_public_key
+
+    try:
+        if "PRIVATE KEY" in pem or "RSA PRIVATE KEY" in pem:
+            key = load_private_key(pem, password=password)
+            spki = key.public_key()
+        else:
+            spki = load_public_key(pem)
+        der = spki.public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        return hashlib.sha256(der).hexdigest()
+    except Exception:
+        return None
 
 
 # ─── commands ────────────────────────────────────────────────────────────────
@@ -128,6 +151,14 @@ def keys_inspect(
         Path,
         typer.Argument(help="Path to a .pem key file (private or public)."),
     ],
+    key_passphrase: Annotated[
+        Optional[str],
+        typer.Option(
+            "--key-passphrase",
+            help="Passphrase if the private key is encrypted (or set RIZMI_KEY_PASSPHRASE).",
+            envvar="RIZMI_KEY_PASSPHRASE",
+        ),
+    ] = None,
 ) -> None:
     """Inspect a PEM key file — show type, size, and fingerprint."""
     if not key.exists():
@@ -135,12 +166,15 @@ def keys_inspect(
         raise typer.Exit(1)
 
     try:
-        info = _load_key_info(key)
+        info = _load_key_info(key, password=key_passphrase)
     except Exception as exc:
         _error(f"Could not read key: {exc}")
         raise typer.Exit(2) from exc
 
-    valid_icon = "[green]✓ valid[/]" if info["valid"] == "True" else "[red]✗ invalid[/]"
+    valid_icon = "[green]✓ valid[/]" if info["valid"] == "True" else (
+        "[yellow]⚠ encrypted?[/]" if not key_passphrase and info["type"] == "Private Key" and "ENCRYPTED" in key.read_text()
+        else "[red]✗ invalid[/]"
+    )
 
     table = Table(show_header=False, box=box.ROUNDED, padding=(0, 2), border_style="cyan")
     table.add_column(style="bold dim", width=16)
