@@ -2,7 +2,12 @@
 set -euo pipefail
 
 APP_NAME="py-rizmi"
-VERSION="1.0.0"
+
+# Derive the version from the installed package (hatch-vcs computes it
+# from git tags) instead of hardcoding it here. Falls back to a dev
+# placeholder when the package isn't importable in this environment
+# (e.g. building from a source snapshot without an install).
+VERSION="$(python -c 'from py_rizmi._version import __version__; print(__version__)' 2>/dev/null || echo 0.0.0.dev0)"
 
 if command -v nuitka >/dev/null 2>&1; then
     NUITKA="nuitka"

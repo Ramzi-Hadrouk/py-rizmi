@@ -1,7 +1,31 @@
-pyjwt>=2.8.0
-cryptography>=41.0.0
-PyQt6>=6.6.0
-pyqtdarktheme>=2.1.0
-markdown>=3.3.0
+# Runtime dependencies for developing on py-rizmi.
+#
+# NOTE: pyproject.toml is the single source of truth for dependency
+# declarations. This file exists only for tooling that expects a
+# requirements.txt (e.g. some CI cache setups, pip-tools workflows).
+# Keep it in sync with [project.dependencies] + [project.optional-dependencies].
+#
+# Install GUI extras with:  pip install -e ".[gui]"
+# Install dev tools with:   pip install -e ".[dev]"
+
+PyJWT>=2.8
+cryptography>=42.0
+typer>=0.12
+rich>=13.0
 py-machineid>=1.0.0
 platformdirs>=4.0
+
+# [gui] extra
+PyQt6>=6.6
+markdown>=3.3.0
+
+# [dev] extra
+pytest>=8.0
+pytest-cov
+pytest-qt
+pytest-mock
+pytest-xdist
+pytest-randomly
+hypothesis
+ruff
+mypy

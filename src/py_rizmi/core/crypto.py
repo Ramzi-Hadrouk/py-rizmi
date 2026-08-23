@@ -54,9 +54,24 @@ def load_public_key(pem: str) -> RSAPublicKey:
 
 
 def save_pem(pem: str, path: str) -> None:
-    """Write a PEM string to disk."""
+    """Write a PEM string to disk.
+
+    The file is created with owner-only permissions (0o600) via os.open,
+    so a private key is never briefly world-readable between creation
+    and a later chmod(). A best-effort chmod afterwards also tightens
+    the permissions of a *pre-existing* file, whose mode the open-time
+    flag does not affect.
+    """
     d = os.path.dirname(path)
     if d:
         os.makedirs(d, exist_ok=True)
-    with open(path, "w") as f:
+    # O_CREAT|O_WRONLY|O_TRUNC with mode 0o600: permission bits apply at
+    # file creation (subject to umask), closing the race where a key
+    # exists world-readable between open() and chmod().
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
         f.write(pem)
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass

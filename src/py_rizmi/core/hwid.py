@@ -72,5 +72,10 @@ class HardwareIdentifier:
 
     @staticmethod
     def verify(hwid: str) -> bool:
-        """Return True if *hwid* matches the current machine."""
-        return hwid == HardwareIdentifier.get_machine_id()
+        """Return True if *hwid* matches the current machine.
+
+        Comparison is case-insensitive, matching the semantics of
+        `LicenseValidator`'s HWID check (hex digests are compared
+        normalized; a hex digest carries no case information).
+        """
+        return hwid.lower() == HardwareIdentifier.get_machine_id().lower()

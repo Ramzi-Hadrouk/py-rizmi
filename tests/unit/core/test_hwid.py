@@ -39,6 +39,14 @@ def test_verify_wrong(_):
     assert HardwareIdentifier.verify("deadbeef" * 8) is False
 
 
+@patch("machineid.id", return_value=MOCK_GUID)
+def test_verify_is_case_insensitive(_):
+    """Must match LicenseValidator's case-insensitive HWID comparison
+    (regression issue #042): hex digests carry no case information."""
+    hwid = HardwareIdentifier.get_machine_id()
+    assert HardwareIdentifier.verify(hwid.upper()) is True
+
+
 @patch("machineid.id", side_effect=machineid.MachineIdNotFound("no id"))
 def test_machineid_error_raises(_):
     with pytest.raises(MachineIdError, match="Unable to obtain machine identifier"):
