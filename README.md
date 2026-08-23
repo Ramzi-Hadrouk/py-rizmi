@@ -430,6 +430,38 @@ except ValueError as e:
 > If your app must hard-stop at `exp` with no grace, check the flag and
 > treat it as expired.
 
+#### Runtime Enforcement for Long-Running Apps
+
+A startup check alone lets an expired license keep running inside a
+process that stays up for weeks (backend servers, workers). Use
+`LicenseWatchdog` to re-validate periodically and stop immediately when
+the license turns invalid — no restart required:
+
+```python
+from py_rizmi import LicenseValidator, LicenseWatchdog
+
+validator = LicenseValidator.from_file("path/to/public_key.pem")
+
+watchdog = LicenseWatchdog(
+    validator,
+    "path/to/license.lic",
+    interval_seconds=600,          # re-check every 10 minutes
+    on_violation=lambda reason, detail: server.shutdown(),
+    strict_start=True,             # refuse to start on an invalid license
+)
+watchdog.start()
+```
+
+- `on_violation(reason, detail)` fires once when the license stops being
+  honored (`expired`, `tampered`, `hwid_mismatch`, `clock_tampering`,
+  `missing`, ...). Do your shutdown there — the watchdog never kills the
+  process itself.
+- `on_grace(payload)` fires when the license is expired but still inside
+  its grace window; degrade gracefully or warn at that point.
+- Callbacks fire on state *changes* only, so shutdown handlers are not
+  re-invoked every poll. Call `watchdog.stop()` on app shutdown (or use
+  it as a context manager).
+
 ### Step 5 — Server-Side Drop-In (Optional)
 
 For apps with a validation server:
