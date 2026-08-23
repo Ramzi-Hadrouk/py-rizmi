@@ -37,7 +37,8 @@ hardware-bound activation, and secure local validation, while remaining flexible
 5. [GUI Usage Guide](#gui-usage-guide)
 6. [CLI Reference](#cli-reference)
 7. [Integration Workflow](#integration-workflow--from-start-to-finish)
-8. [Testing](#testing)
+8. [Developer Integration Guide](docs/integration-guide.md)
+9. [Testing](#testing)
 9. [Building an Executable](#building-an-executable)
 10. [Project Structure](#project-structure)
 11. [Contributing](#contributing)
@@ -373,8 +374,7 @@ rizmi gui --help
 
 | Command | Description |
 |---|---|
-| `rizmi license issue` | Sign and write a `.lic` token file (`--json` for machine output) |
-| `rizmi license issue-from-json <req.json>` | Issue a license from a JSON request file |
+| `rizmi license issue` | Sign and write a `.lic` token file (`--from-json <req.json>` for a JSON spec) |
 | `rizmi license validate <file.lic>` | Validate signature, expiry, and HWID |
 | `rizmi license inspect <file.lic>` | Decode and display all payload fields |
 | `rizmi license revoke` | Build and sign a revocation list from license IDs |
@@ -441,6 +441,10 @@ rizmi license inspect license.lic --public-key keys/public.pem
 ---
 
 ## Integration Workflow — From Start to Finish
+
+> **Deep dive:** For the complete, no-gaps developer reference — every API,
+> CLI flag, error code, revocation, trial, watchdog, and swap flow — see
+> [`docs/integration-guide.md`](docs/integration-guide.md).
 
 The recommended path is to use **`rizmi gui`** (or `python main.py`) for interactive
 tasks and fall back to **CLI commands** (`rizmi ...`) when you need
