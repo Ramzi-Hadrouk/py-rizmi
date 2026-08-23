@@ -256,6 +256,22 @@ Navigate to **License Swap** in the sidebar.
 3. Click **Sign License Swap Authorization** — inspect the generated output.
 4. Click **Save Authorization File...** to save the signed `.rzswap` payload file.
 
+### Revocation
+
+Navigate to **Revocation** in the sidebar.
+
+1. Enter one or more **License IDs** to revoke (leave empty to publish a
+   clean list that un-revokes everything).
+2. Select your RSA **Private Key** `.pem` file (and passphrase if encrypted).
+3. Set **Next Update (hours)** — the advisory refresh horizon embedded in
+   the list (offline validators keep accepting the last known list after
+   it passes).
+4. Click **Sign Revocation List**, then **Save Revocation List...**.
+
+Distribute the resulting JSON to your apps and load it with
+`LicenseValidator(public_key, revocation_list=...)` — any license whose
+ID is on the list fails validation with `revoked`.
+
 ### Integration Guide
 
 
