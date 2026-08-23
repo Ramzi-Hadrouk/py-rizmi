@@ -7,6 +7,7 @@ except ImportError:
     __version__ = "0.0.0.dev0"
 
 from py_rizmi.core.hwid import HardwareIdentifier as MachineFingerprint
+from py_rizmi.core.config import RizmiConfig
 from py_rizmi.core.keypair import KeyPairManager as KeyPair
 from py_rizmi.core.license_issuer import LicenseIssuer
 from py_rizmi.core.license_validator import LicenseValidator
@@ -31,6 +32,7 @@ from py_rizmi.models.swap_payload import LicenseSwapPayload, ReplacementAuthoriz
 
 __all__ = [
     "__version__",
+    "RizmiConfig",
     "LicenseValidator",
     "LicenseIssuer",
     "LicenseWatchdog",

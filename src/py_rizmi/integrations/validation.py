@@ -147,9 +147,18 @@ def _make_clock_guard(config_dir: str, app_name: str = "py-rizmi") -> ClockGuard
 
 
 def validate_license(
-    config_dir: str, enable_clock_guard: bool = True, app_name: str = "py-rizmi"
+    config_dir: str,
+    enable_clock_guard: bool = True,
+    app_name: str = "py-rizmi",
+    *,
+    config: Any = None,
 ) -> dict[str, Any]:
     """Validate license.lic in *config_dir*. Returns payload dict on success.
+
+    Pass ``config`` (a `RizmiConfig`) to source settings centrally:
+    ``check_hwid``, clock-guard enablement and the app name for state
+    paths all come from the config unless overridden by the explicit
+    parameters above (explicit parameters win).
 
     *enable_clock_guard* additionally rejects a validation attempt made
     while the system clock looks like it's been rolled back - see
@@ -180,6 +189,10 @@ def validate_license(
         if payload["in_grace_period"]:
             ...  # expired, running on borrowed time - warn or degrade
     """
+    if config is not None:
+        app_name = getattr(config, "app_name", app_name)
+        # explicit enable_clock_guard param wins over config
+
     public_key = get_public_key(config_dir)
     license_path = os.path.join(config_dir, "license.lic")
 
@@ -193,7 +206,10 @@ def validate_license(
     clock_guard = _make_clock_guard(config_dir, app_name) if enable_clock_guard else None
     validator = LicenseValidator(public_key, clock_guard=clock_guard)
 
-    payload = validator.validate(token, check_hwid=True)
+    payload = validator.validate(
+        token,
+        check_hwid=bool(getattr(config, "check_hwid", True)) if config is not None else True,
+    )
 
     logger.info(
         "License check passed for %s (exp=%s)",

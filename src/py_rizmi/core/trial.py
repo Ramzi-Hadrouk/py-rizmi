@@ -290,6 +290,38 @@ class TrialManager:
             status = self.check()
         return status
 
+    @classmethod
+    def from_config(
+        cls,
+        config: Any,
+        config_dir: str | Path,
+        public_key: str,
+        *,
+        trial_days: Optional[int] = None,
+        license_path: str | Path | None = None,
+        hwid_provider: Any = None,
+        enable_clock_guard: Optional[bool] = None,
+    ) -> "TrialManager":
+        """Build a TrialManager from a `RizmiConfig`.
+
+        Explicit keyword arguments take precedence over config values.
+        The trial length comes from ``config.trial_days`` unless
+        overridden here; ``config.check_hwid`` and clock tolerance are
+        honored via the same fields.
+        """
+        return cls(
+            config_dir,
+            trial_days=(
+                trial_days if trial_days is not None else int(config.trial_days)
+            ),
+            public_key=public_key,
+            license_path=license_path,
+            hwid_provider=hwid_provider,
+            enable_clock_guard=(
+                enable_clock_guard if enable_clock_guard is not None else True
+            ),
+        )
+
     def _check_real_license(self) -> Optional[TrialStatus]:
         token = _read_json_file(self.license_path)
         if token is None:

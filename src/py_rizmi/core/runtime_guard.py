@@ -45,7 +45,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Callable, Optional, Protocol
+from typing import Any, Callable, Optional, Protocol
 
 from py_rizmi.models.license_payload import LicensePayload
 
@@ -190,6 +190,49 @@ class LicenseWatchdog:
 
     def __exit__(self, *_exc: object) -> None:
         self.stop()
+
+    @classmethod
+    def from_config(
+        cls,
+        config: Any,
+        validator: _ValidatorLike,
+        license_path: str,
+        *,
+        interval_seconds: Optional[float] = None,
+        check_hwid: Optional[bool] = None,
+        strict_start: Optional[bool] = None,
+        on_valid: Optional[PayloadCallback] = None,
+        on_grace: Optional[PayloadCallback] = None,
+        on_violation: Optional[ViolationCallback] = None,
+    ) -> "LicenseWatchdog":
+        """Build a watchdog from a `RizmiConfig`.
+
+        Explicit keyword arguments take precedence over config values;
+        config values take precedence over library defaults. Example:
+        a developer can set ``watchdog_interval_seconds=60`` (1 minute)
+        or ``7200`` (2 hours) centrally and override per-instance when
+        needed.
+        """
+        return cls(
+            validator,
+            license_path,
+            interval_seconds=(
+                interval_seconds
+                if interval_seconds is not None
+                else float(config.watchdog_interval_seconds)
+            ),
+            check_hwid=(
+                check_hwid if check_hwid is not None else bool(config.check_hwid)
+            ),
+            strict_start=(
+                strict_start
+                if strict_start is not None
+                else bool(config.watchdog_strict_start)
+            ),
+            on_valid=on_valid,
+            on_grace=on_grace,
+            on_violation=on_violation,
+        )
 
     # ---- internals -------------------------------------------------------
 
