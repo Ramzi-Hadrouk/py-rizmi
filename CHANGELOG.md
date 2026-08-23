@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-08-23
+
+### Added
+- **License-Free Trial Periods**: `TrialManager` / `TrialStatus` issue a self-signed, HWID-bound, ClockGuard-protected trial license so clients can evaluate for N days without a real `license.lic`. CLI `rizmi trial status` / `rizmi trial reset` (with `--json`).
+- **License Revocation**: `RevocationList`, `create_revocation_list`, `sign_revocation_list`, `verify_revocation_list` for publishing signed revocation lists; `LicenseValidator(revocation_list=...)` rejects revoked license IDs. New **Revocation** GUI tab.
+- **Runtime Enforcement**: `LicenseWatchdog` / `LicenseWatchdogError` periodically re-validate a license and fire `on_violation` / `on_grace` callbacks for long-running apps without a restart.
+- **Centralized Config**: `RizmiConfig` — one validated source of truth for configuration.
+- **CLI Enhancements**: `--json` output on license commands, `rizmi license issue-from-json`, and local swap-request generation (`rizmi license create-swap-request`).
+- **Strict Payload Validation**: `LicensePayload` / `LicenseSwapPayload` now validate strictly; grace-period semantics documented.
+- **Secure Key Writes**: Generated and private keys are written with restricted file permissions.
+
+### Changed
+- **Swap-Auth API Extended**: added `create_replacement_authorization_payload`, `sign_authorization_payload`, `verify_authorization` and the `ReplacementAuthorizationPayload` model alongside the existing swap-request API.
+- Consistent dependencies and versioning across build scripts.
+
+### Fixed
+- `swap`: enforce expiry at sign time and verify signature before semantic checks.
+
+---
+
 ## [1.5.0] - 2026-08-19
 
 ### Added

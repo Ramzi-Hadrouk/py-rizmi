@@ -77,10 +77,15 @@ suitable for integration into any Python application or web backend.
   matching public key — no private key needed.
 - **Integration Guide** — In-app rendered README with Python API docs
   and backend integration examples.
-- **Public API** — Curated `__all__` surface (`LicenseValidator`,
-  `LicenseIssuer`, `KeyPair`, `MachineFingerprint`, `LicensePayload`,
-  `LicenseSwapPayload`, `create_swap_request`, `sign_swap_request`,
-  `verify_swap_authorization`) covered by SemVer.
+- **Public API** — Curated `__all__` surface (`RizmiConfig`,
+  `LicenseValidator`, `LicenseIssuer`, `KeyPair`, `MachineFingerprint`,
+  `LicensePayload`, `LicenseSwapPayload`, `ReplacementAuthorizationPayload`,
+  `RevocationList`, `create_revocation_list`, `sign_revocation_list`,
+  `verify_revocation_list`, `TrialManager`, `TrialStatus`,
+  `LicenseWatchdog`, `LicenseWatchdogError`, `create_swap_request`,
+  `create_replacement_authorization_payload`, `sign_swap_request`,
+  `sign_authorization_payload`, `verify_swap_authorization`,
+  `verify_authorization`) covered by SemVer.
 - **PyQt6 GUI** — Sidebar-navigated desktop application for cross-platform use.
 - **CLI** — Headless issuance, key generation, validation, license swap signing,
   and HWID retrieval via `rizmi` commands (Typer + Rich).
@@ -368,9 +373,12 @@ rizmi gui --help
 
 | Command | Description |
 |---|---|
-| `rizmi license issue` | Sign and write a `.lic` token file |
+| `rizmi license issue` | Sign and write a `.lic` token file (`--json` for machine output) |
+| `rizmi license issue-from-json <req.json>` | Issue a license from a JSON request file |
 | `rizmi license validate <file.lic>` | Validate signature, expiry, and HWID |
 | `rizmi license inspect <file.lic>` | Decode and display all payload fields |
+| `rizmi license revoke` | Build and sign a revocation list from license IDs |
+| `rizmi license create-swap-request` | Generate a license swap request JSON locally |
 | `rizmi license sign-swap` | Sign a license swap request file locally using RSA private key |
 | `rizmi license verify-swap <auth.rzswap>` | Verify a signed license swap authorization file against public key and licenses |
 
@@ -383,6 +391,13 @@ rizmi machine-id           # rich panel output
 rizmi machine-id --raw     # plain hash only (for piping)
 rizmi machine-id --copy    # copy to clipboard
 ```
+
+### Trial Period — `rizmi trial`
+
+| Command | Description |
+|---|---|
+| `rizmi trial status --config-dir DIR --public-key KEY [--json]` | Show trial/license status (`licensed`, `trial_active`, `trial_expired`, `tampered`, ...) |
+| `rizmi trial reset --config-dir DIR --confirm` | Reset trial state (developer diagnostics only) |
 
 ### GUI — `rizmi gui`
 
