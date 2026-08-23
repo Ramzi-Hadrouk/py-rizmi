@@ -103,3 +103,92 @@ def test_cli_private_key_secrecy(cli_env, tmp_path):
     for stream in (res.stdout, res.stderr, auth_out.read_text()):
         assert "BEGIN RSA PRIVATE KEY" not in stream
         assert "BEGIN PRIVATE KEY" not in stream
+
+
+def test_cli_sign_swap_rejects_non_expiring_request(cli_env, tmp_path):
+    """A request JSON without a real expiry window must be refused at sign time."""
+    req = json.loads(cli_env["req_file"].read_text())
+    req["expires_at"] = 0
+    bad_req = tmp_path / "bad_request.json"
+    bad_req.write_text(json.dumps(req))
+
+    res = runner.invoke(
+        app,
+        [
+            "sign-swap",
+            "--request",
+            str(bad_req),
+            "--private-key",
+            str(cli_env["priv_path"]),
+            "--output",
+            str(tmp_path / "auth.rzswap"),
+        ],
+    )
+    assert res.exit_code == 1
+    assert "expires_at" in res.output
+
+
+def test_cli_verify_swap_with_matching_request_id(cli_env, tmp_path):
+    auth_out = tmp_path / "authorization.rzswap"
+    runner.invoke(
+        app,
+        [
+            "sign-swap",
+            "--request",
+            str(cli_env["req_file"]),
+            "--private-key",
+            str(cli_env["priv_path"]),
+            "--output",
+            str(auth_out),
+        ],
+    )
+    res = runner.invoke(
+        app,
+        [
+            "verify-swap",
+            str(auth_out),
+            "--public-key",
+            str(cli_env["pub_path"]),
+            "--current-license",
+            str(cli_env["curr_lic_path"]),
+            "--new-license",
+            str(cli_env["new_lic_path"]),
+            "--request-id",
+            "cli-req-123",
+        ],
+    )
+    assert res.exit_code == 0
+
+
+def test_cli_verify_swap_with_wrong_request_id_fails(cli_env, tmp_path):
+    """Replay protection: an authorization bound to another request must fail."""
+    auth_out = tmp_path / "authorization.rzswap"
+    runner.invoke(
+        app,
+        [
+            "sign-swap",
+            "--request",
+            str(cli_env["req_file"]),
+            "--private-key",
+            str(cli_env["priv_path"]),
+            "--output",
+            str(auth_out),
+        ],
+    )
+    res = runner.invoke(
+        app,
+        [
+            "verify-swap",
+            str(auth_out),
+            "--public-key",
+            str(cli_env["pub_path"]),
+            "--current-license",
+            str(cli_env["curr_lic_path"]),
+            "--new-license",
+            str(cli_env["new_lic_path"]),
+            "--request-id",
+            "different-request-999",
+        ],
+    )
+    assert res.exit_code == 1
+    assert "request_id_mismatch" in res.output

@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import time
 import uuid
 from typing import Any, Dict, Tuple
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.exceptions import InvalidSignature
 
 from py_rizmi.core.crypto import load_private_key, load_public_key
 from py_rizmi.models.swap_payload import (
@@ -16,6 +18,8 @@ from py_rizmi.models.swap_payload import (
     PROTOCOL_VERSION,
     LicenseSwapPayload,
 )
+
+logger = logging.getLogger("license")
 
 
 def canonicalize_payload(payload_dict: Dict[str, Any]) -> bytes:
@@ -32,7 +36,16 @@ def create_swap_request(
     request_id: str | None = None,
     valid_minutes: int = 60,
 ) -> LicenseSwapPayload:
-    """Generate a fresh license swap authorization payload with short-lived expiration."""
+    """Generate a fresh license swap authorization payload with short-lived expiration.
+
+    *valid_minutes* must be positive -- swap authorizations are deliberately
+    short-lived credentials; a non-expiring one would defeat the protocol.
+    """
+    if valid_minutes <= 0:
+        raise ValueError(
+            f"valid_minutes must be positive (got {valid_minutes}); swap "
+            "authorizations are short-lived by design"
+        )
     now = int(time.time())
     payload = LicenseSwapPayload(
         protocol_version=PROTOCOL_VERSION,
@@ -58,11 +71,23 @@ def sign_swap_request(
       "payload": { ... },
       "signature": "<base64_encoded_signature>"
     }
+
+    Rejects payloads whose ``expires_at`` is not in the future: signing a
+    request without a real expiry window would mint a perpetually-valid
+    authorization, which contradicts the short-lived design of the swap
+    protocol.
     """
     if isinstance(payload, LicenseSwapPayload):
         payload_dict = payload.to_dict()
     else:
         payload_dict = payload
+
+    expires_at = int(payload_dict.get("expires_at", 0))
+    if expires_at <= 0:
+        raise ValueError(
+            "swap authorization must have a positive expires_at; refusing to "
+            "sign a non-expiring authorization"
+        )
 
     priv_key = load_private_key(private_key_pem, password=passphrase)
     canonical_bytes = canonicalize_payload(payload_dict)
@@ -110,12 +135,35 @@ def verify_swap_authorization(
     if not payload_raw or not sig_b64 or not isinstance(payload_raw, dict) or not isinstance(sig_b64, str):
         return False, "malformed_authorization", None
 
+    # 1. RSA Signature Verification FIRST -- nothing about an unauthenticated
+    # envelope (its expiry state, its license bindings) may be probed or
+    # trusted before authenticity is established.
+    try:
+        pub_key = load_public_key(public_key_pem)
+        raw_sig_bytes = base64.b64decode(sig_b64, validate=True)
+        canonical_bytes = canonicalize_payload(payload_raw)
+        pub_key.verify(
+            raw_sig_bytes,
+            canonical_bytes,
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+    except (ValueError, TypeError) as exc:
+        # binascii.Error (bad base64) and unusable key material surface here.
+        logger.warning("Swap authorization rejected: invalid_signature (%s)", exc)
+        return False, "invalid_signature", None
+    except InvalidSignature:
+        return False, "invalid_signature", None
+    except Exception as exc:  # malformed PEM / unsupported key type
+        logger.warning("Swap authorization rejected: invalid_signature (%s)", exc)
+        return False, "invalid_signature", None
+
     try:
         payload = LicenseSwapPayload.from_dict(payload_raw)
     except Exception:
         return False, "malformed_payload", None
 
-    # 1. Protocol version check
+    # 2. Protocol version check (signature now verified)
     if payload.protocol_version != PROTOCOL_VERSION:
         return False, "unsupported_protocol_version", None
 
@@ -137,22 +185,6 @@ def verify_swap_authorization(
     # 5. Request ID check (if expected_request_id provided)
     if expected_request_id and payload.request_id != expected_request_id:
         return False, "request_id_mismatch", None
-
-    # 6. RSA Signature Verification
-    try:
-        pub_key = load_public_key(public_key_pem)
-        raw_sig_bytes = base64.b64decode(sig_b64)
-        canonical_bytes = canonicalize_payload(payload_raw)
-
-        pub_key.verify(
-            raw_sig_bytes,
-            canonical_bytes,
-            padding.PKCS1v15(),
-            hashes.SHA256(),
-        )
-    except Exception:
-        return False, "invalid_signature", None
-
 
     return True, "valid", payload
 

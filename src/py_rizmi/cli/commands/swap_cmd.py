@@ -61,6 +61,15 @@ def license_sign_swap(
         data = json.loads(request_file.read_text())
         payload_dict = data.get("payload", data)
         payload = LicenseSwapPayload.from_dict(payload_dict)
+        if payload.expires_at <= 0 or payload.expires_at <= payload.issued_at:
+            _error(
+                "Request file has no valid expiry window (expires_at must be "
+                "after issued_at). Swap authorizations are short-lived by "
+                "design; refusing to sign a non-expiring authorization."
+            )
+            raise typer.Exit(1)
+    except typer.Exit:
+        raise
     except Exception as exc:
         _error(f"Failed to parse request file: {exc}")
         raise typer.Exit(1) from exc
@@ -104,6 +113,14 @@ def license_verify_swap(
         Path,
         typer.Option("--new-license", help="Path to replacement .lic file."),
     ],
+    expected_request_id: Annotated[
+        Optional[str],
+        typer.Option(
+            "--request-id",
+            help="Expect this request_id in the authorization (replay protection: "
+                 "fail if the authorization was issued for a different request).",
+        ),
+    ] = None,
 ) -> None:
     """Verify a signed license swap authorization file against public key and license contents."""
     for p in (auth_file, public_key, current_license, new_license):
@@ -123,6 +140,7 @@ def license_verify_swap(
                 public_key_pem=pub_pem,
                 expected_current_license=curr_text,
                 expected_new_license=new_text,
+                expected_request_id=expected_request_id,
             )
         except Exception as exc:
             _error(f"Verification error: {exc}")
