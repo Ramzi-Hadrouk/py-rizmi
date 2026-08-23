@@ -177,6 +177,19 @@ def license_issue(
         _error(f'Invalid mode [bold]{mode!r}[/]. Choose "offline" or "online".')
         raise typer.Exit(1)
 
+    if exp_days <= 0:
+        _error(f"--exp-days must be positive (got [bold]{exp_days}[/]).")
+        raise typer.Exit(1)
+    if grace_days < 0:
+        _error(f"--grace-days must be non-negative (got [bold]{grace_days}[/]).")
+        raise typer.Exit(1)
+    if max_clients < 1:
+        _error(f"--max-clients must be at least 1 (got [bold]{max_clients}[/]).")
+        raise typer.Exit(1)
+    if mode == "online" and not server_url:
+        _error('--server-url is required when --mode is "online".')
+        raise typer.Exit(1)
+
     if not private_key.exists():
         _error(f"Private key not found: [bold]{private_key}[/]")
         raise typer.Exit(1)

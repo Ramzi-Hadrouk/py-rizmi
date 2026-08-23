@@ -166,8 +166,19 @@ def validate_license(
     Raises ValueError whose message is one of the keys in
     `py_rizmi.core.license_validator.ERROR_MESSAGES` - currently:
     'missing', 'expired', 'tampered', 'invalid_algorithm', 'decode_error',
-    'unsupported_schema', 'hwid_mismatch', 'revoked', 'clock_tampering'.
+    'unsupported_schema', 'hwid_mismatch', 'clock_tampering'.
     Look up a user-facing message with `ERROR_MESSAGES.get(str(exc), str(exc))`.
+
+    Grace period: a license whose *exp* has passed but which is still
+    inside its ``grace_days`` window does NOT raise -- validation
+    succeeds and the returned dict contains ``"in_grace_period": True``.
+    Server integrations that must hard-stop on expiry should check that
+    flag explicitly (or use `LicensePayload.is_in_grace()` when working
+    with the model object)::
+
+        payload = validate_license(config_dir)
+        if payload["in_grace_period"]:
+            ...  # expired, running on borrowed time - warn or degrade
     """
     public_key = get_public_key(config_dir)
     license_path = os.path.join(config_dir, "license.lic")

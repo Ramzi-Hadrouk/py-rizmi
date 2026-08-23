@@ -423,6 +423,13 @@ except ValueError as e:
     print(f"License invalid: {e}")
 ```
 
+> **Grace-period semantics:** validation only raises `expired` once the
+> license's `exp` **plus** its `grace_days` window has passed. Inside that
+> window, validation *succeeds* and the returned payload has
+> `in_grace_period = True` (also available as `payload.is_in_grace()`).
+> If your app must hard-stop at `exp` with no grace, check the flag and
+> treat it as expired.
+
 ### Step 5 — Server-Side Drop-In (Optional)
 
 For apps with a validation server:
@@ -443,6 +450,9 @@ and may raise `clock_tampering` alongside the standard validation errors.
 Pass `enable_clock_guard=False` only for diagnostics or tests.
 The direct `LicenseValidator` API also accepts an optional `clock_guard`
 argument for the same behavior.
+
+The same grace-period rule applies here: an in-grace license does not
+raise — check `payload["in_grace_period"]` in the returned dict to detect it.
 
 ### License Swap Authorization
 

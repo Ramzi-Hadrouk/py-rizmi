@@ -36,21 +36,64 @@ class LicenseSwapPayload:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> LicenseSwapPayload:
-        """Construct payload instance from dictionary representation."""
+        """Construct payload instance from dictionary representation.
+
+        Fields are type-checked/coerced so malformed envelopes fail here
+        with a clear ``ValueError`` instead of producing confusing
+        behavior during signing or verification.
+        """
+        protocol_version = _require_int(data, "protocol_version", PROTOCOL_VERSION)
+        issued_at = _require_int(data, "issued_at", 0)
+        expires_at = _require_int(data, "expires_at", 0)
+        if issued_at < 0 or expires_at < 0:
+            raise ValueError("issued_at/expires_at must be non-negative timestamps")
+
+        request_id = data.get("request_id", "")
+        current_license = data.get("current_license", "")
+        new_license = data.get("new_license", "")
+        operation = data.get("operation", FIXED_OPERATION)
+        for name, value in (
+            ("request_id", request_id),
+            ("current_license", current_license),
+            ("new_license", new_license),
+            ("operation", operation),
+        ):
+            if not isinstance(value, str):
+                raise ValueError(f"{name} must be a string, got {type(value).__name__}")
+
         return cls(
-            protocol_version=int(data.get("protocol_version", PROTOCOL_VERSION)),
-            operation=str(data.get("operation", FIXED_OPERATION)),
-            request_id=str(data.get("request_id", "")),
-            current_license=str(data.get("current_license", "")),
-            new_license=str(data.get("new_license", "")),
-            issued_at=int(data.get("issued_at", 0)),
-            expires_at=int(data.get("expires_at", 0)),
+            protocol_version=protocol_version,
+            operation=operation,
+            request_id=request_id,
+            current_license=current_license,
+            new_license=new_license,
+            issued_at=issued_at,
+            expires_at=expires_at,
         )
 
     def is_expired(self, current_time: int | None = None) -> bool:
         """Return True if payload is past its expiration timestamp."""
         now = current_time if current_time is not None else int(time.time())
         return self.expires_at > 0 and now > self.expires_at
+
+
+def _require_int(data: Dict[str, Any], key: str, default: int) -> int:
+    """Fetch *key* as an int; see license_payload._require_int for rules."""
+    value = data.get(key, default)
+    if isinstance(value, bool):
+        raise ValueError(f"{key} must be an integer, got bool")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        if value.is_integer():
+            return int(value)
+        raise ValueError(f"{key} must be an integer, got {value!r}")
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            raise ValueError(f"{key} must be an integer, got {value!r}") from None
+    raise ValueError(f"{key} must be an integer, got {type(value).__name__}")
 
 
 # Alias for backward compatibility
