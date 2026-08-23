@@ -272,6 +272,69 @@ Distribute the resulting JSON to your apps and load it with
 `LicenseValidator(public_key, revocation_list=...)` — any license whose
 ID is on the list fails validation with `revoked`.
 
+### Trial Period — License-Free Evaluation
+
+Let clients use your app for N days without any license file. On first
+run the app issues itself a **self-signed trial license** (bound to the
+machine, protected by the same ClockGuard anti-rollback used for real
+licenses). When the trial ends the app blocks until the client buys a
+real `license.lic` — which always supersedes the trial, even mid-trial.
+
+```mermaid
+flowchart TD
+    A[App startup] --> B{license.lic exists?}
+    B -- yes --> C[Validate with vendor public key]
+    C -- valid --> D[Full access]
+    C -- invalid --> E[Block + show reason]
+    B -- no --> F{trial.lic exists?}
+    F -- no --> G[First run: generate trial keypair<br/>issue self-signed trial license<br/>exp = now + trial_days]
+    F -- yes --> H[Validate with trial public key<br/>+ ClockGuard + HWID]
+    G --> I[Trial active: days left]
+    H -- valid --> I
+    H -- expired --> J[Trial over: block app<br/>prompt to buy license.lic]
+    H -- tampered --> J
+```
+
+#### Integration (3 lines at startup)
+
+```python
+from py_rizmi import TrialManager
+
+trial = TrialManager(
+    config_dir="path/to/app-config",   # your app's config dir
+    trial_days=14,                     # your trial length
+    public_key=vendor_public_key_pem,  # already embedded for validation
+)
+status = trial.start_or_check()
+if not status.ok:
+    ...  # trial expired / tampered / license invalid: block or degrade
+```
+
+`status.state` is one of `licensed`, `trial_active` (with `days_left`),
+`trial_expired`, `tampered`, `licensed_invalid` (a real license exists
+but fails validation — never silently falls back to trial), or
+`no_trial`. Pair with `LicenseWatchdog` to enforce trial expiry in
+long-running backends without a restart.
+
+#### What the trial protects against
+
+| Attack | Defense |
+|---|---|
+| Editing `trial.lic` to extend it | Trial-file signature check → `tampered` |
+| Copying another machine's trial | HWID binding → `tampered` |
+| Rolling the clock back | ClockGuard high-water mark → `tampered` |
+| Deleting `trial.lic` to restart | Start date ratcheted into redundant ClockGuard state — a new trial inherits the original date |
+
+Like all offline mechanisms, this raises the bar against
+casual-to-moderate tampering, not a determined reverse engineer.
+
+#### CLI diagnostics
+
+```bash
+rizmi trial status --config-dir ./app-config --public-key vendor_pub.pem [--json]
+rizmi trial reset --config-dir ./app-config --confirm   # developer diagnostics only
+```
+
 ### Integration Guide
 
 

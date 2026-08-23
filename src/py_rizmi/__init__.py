@@ -17,6 +17,7 @@ from py_rizmi.core.revocation import (
     verify_revocation_list,
 )
 from py_rizmi.core.runtime_guard import LicenseWatchdog, LicenseWatchdogError
+from py_rizmi.core.trial import TrialManager, TrialStatus
 from py_rizmi.core.swap_auth import (
     create_replacement_authorization_payload,
     create_swap_request,
@@ -38,6 +39,8 @@ __all__ = [
     "create_revocation_list",
     "sign_revocation_list",
     "verify_revocation_list",
+    "TrialManager",
+    "TrialStatus",
     "KeyPair",
     "MachineFingerprint",
     "LicensePayload",

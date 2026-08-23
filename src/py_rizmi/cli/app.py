@@ -28,6 +28,7 @@ except ImportError:
 from py_rizmi.cli.commands.keys import app as keys_app
 from py_rizmi.cli.commands.license_cmd import app as license_app
 from py_rizmi.cli.commands.machine_id import app as machine_id_app
+from py_rizmi.cli.commands.trial_cmd import app as trial_app
 
 console = Console()
 err_console = Console(stderr=True)
@@ -47,6 +48,7 @@ app = typer.Typer(
 app.add_typer(keys_app,       name="keys",       help="RSA keypair generation and management.")
 app.add_typer(license_app,    name="license",    help="License file issuance, validation, inspection, and swap authorization.")
 app.add_typer(machine_id_app, name="machine-id", help="Get this machine's hardware fingerprint (HWID).")
+app.add_typer(trial_app, name="trial", help="License-free trial period status and management.")
 
 
 
@@ -155,6 +157,7 @@ def _print_help() -> None:
     table.add_row("license revoke",       "Publish a signed revocation list for license IDs")
     table.add_row("",                     "")
     table.add_row("machine-id",           "Print this machine's hardware fingerprint (HWID)")
+    table.add_row("trial status",         "Show trial/licensing state for a config directory")
     table.add_row("",                     "")
     table.add_row("gui",                  "Launch the graphical interface [dim](requires [gui] extra)[/dim]")
 
