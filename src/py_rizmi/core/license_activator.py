@@ -44,6 +44,74 @@ class ActivationResult:
     payload: Optional[LicensePayload] = None
 
 
+@dataclass
+class LicenseStatus:
+    """Developer-facing license/trial state summary.
+
+    Truthy when the app may run (licensed or active trial). ``message``
+    is a ready-to-display sentence; ``to_dict()`` is JSON-safe for UIs.
+    """
+
+    state: str  # licensed | licensed_invalid | trial_active | trial_expired |
+                # tampered | missing | error
+    ok: bool = False
+    days_left: int = 0
+    client: str = ""
+    expires_at: int = 0  # unix ts, 0 = n/a
+    reason: str = ""
+    message: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.message:
+            from py_rizmi.core.license_validator import ERROR_MESSAGES
+
+            self.message = ERROR_MESSAGES.get(self.reason, self.state.replace("_", " "))
+
+    def __bool__(self) -> bool:
+        return self.ok
+
+    @classmethod
+    def from_activation(
+        cls, result: ActivationResult, *, days_left: int = 0
+    ) -> "LicenseStatus":
+        import time
+
+        from py_rizmi.core.license_validator import ERROR_MESSAGES
+
+        if result.ok and result.payload is not None:
+            payload = result.payload
+            remaining = max(0, (payload.exp - int(time.time())) // 86_400)
+            return cls(
+                state="licensed",
+                ok=True,
+                days_left=remaining,
+                client=payload.client,
+                expires_at=payload.exp,
+                message=f"Licensed to {payload.client} ({remaining} day(s) left)",
+            )
+        if result.ok:
+            return cls(state="licensed", ok=True, days_left=days_left,
+                       message="Licensed")
+        detail = ERROR_MESSAGES.get(result.reason, result.detail or result.reason)
+        return cls(
+            state=result.reason or "error",
+            ok=False,
+            reason=result.reason,
+            message=detail,
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "state": self.state,
+            "ok": self.ok,
+            "days_left": self.days_left,
+            "client": self.client,
+            "expires_at": self.expires_at,
+            "reason": self.reason,
+            "message": self.message,
+        }
+
+
 class LicenseActivator:
     """Validate-and-store licenses against the embedded vendor public key.
 
