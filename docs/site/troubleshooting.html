@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Troubleshooting — py-Rizmi</title>
+<script>(function(){try{var t=localStorage.getItem("rz-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}})();</script>
+<link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="stylesheet" href="assets/style.css">
 <meta name="author" content="Ramzi Hadrouk">
 <meta name="copyright" content="&copy; 2026 Ramzi Hadrouk">
@@ -32,14 +34,18 @@
 </script>
 </head>
 <body>
-<script src="assets/header.js"></script>
-
-<section class="hero" style="border-top:none;padding-bottom:30px;">
-  <div class="container"><h1>Troubleshooting</h1>
+<div id="site-chrome"></div>
+<div class="shell">
+  <aside class="sidebar"></aside>
+  <main class="content"><div class="content-inner">
+<div class="topbar">
+      <button class="hamburger" aria-label="Menu">&#9776;</button>
+    </div>
+<div class="hero"><h1>Troubleshooting</h1>
   <p class="sub">Start with <code>rizmi doctor run -a &lt;App&gt;</code> — it answers most tickets in one shot.</p></div>
 </section>
 
-<section><div class="container">
+<div>
   <h2>Support workflow that actually works</h2>
 <pre><code># customer machine:
 rizmi doctor run --app-name MyApp --json > doctor.json
@@ -68,8 +74,11 @@ rizmi app status --app-name MyApp --db "$(rizmi doctor path 2>/dev/null)" # or d
 <pre><code>rizmi doctor run -a MyApp -P pub.pem --fingerprint FP --json > doctor.json
 rizmi app status -a MyApp --json > status.json   # add --db for non-default paths</code></pre>
   <p>Both files contain no secrets: the public key is public, tokens are hardware-bound, and HMAC values are useless off-machine.</p>
-</div></section>
+</div>
 
+</div></main>
+</div>
 <footer class="site"><div class="container">py-Rizmi Licensing — created &amp; maintained by <b>Ramzi Hadrouk</b> · MIT · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">GitHub</a> · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi/issues">Issues</a></div></footer>
+<script src="assets/layout.js"></script>
 </body>
 </html>

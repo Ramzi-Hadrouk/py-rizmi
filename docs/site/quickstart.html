@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quick Start — py-Rizmi</title>
+<script>(function(){try{var t=localStorage.getItem("rz-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}})();</script>
+<link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="stylesheet" href="assets/style.css">
 <meta name="author" content="Ramzi Hadrouk">
 <meta name="copyright" content="&copy; 2026 Ramzi Hadrouk">
@@ -32,14 +34,18 @@
 </script>
 </head>
 <body>
-<script src="assets/header.js"></script>
-
-<section class="hero" style="border-top:none;padding-bottom:30px;">
-  <div class="container"><h1>Quick Start</h1>
+<div id="site-chrome"></div>
+<div class="shell">
+  <aside class="sidebar"></aside>
+  <main class="content"><div class="content-inner">
+<div class="topbar">
+      <button class="hamburger" aria-label="Menu">&#9776;</button>
+    </div>
+<div class="hero"><h1>Quick Start</h1>
   <p class="sub">From zero to a licensed Python app in about five minutes.</p></div>
 </section>
 
-<section><div class="container">
+<div>
   <h2>1 · Install</h2>
 <pre><code>pip install py-rizmi          # core (validation + issuance + CLI)
 pip install py-rizmi[gui]     # optional PyQt6 desktop toolkit</code></pre>
@@ -98,8 +104,11 @@ if result.ok:
   <h2 style="margin-top:34px;">When something breaks</h2>
 <pre><code>rizmi doctor --app-name MyApp</code></pre>
   <p>prints a ✓/✗ checklist of every subsystem. Ask customers to run it and send the output — see <a href="troubleshooting.html">Troubleshooting</a>.</p>
-</div></section>
+</div>
 
+</div></main>
+</div>
 <footer class="site"><div class="container">py-Rizmi Licensing — created &amp; maintained by <b>Ramzi Hadrouk</b> · MIT · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">GitHub</a> · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi/issues">Issues</a></div></footer>
+<script src="assets/layout.js"></script>
 </body>
 </html>
