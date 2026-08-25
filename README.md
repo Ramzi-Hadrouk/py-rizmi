@@ -278,6 +278,80 @@ Distribute the resulting JSON to your apps and load it with
 `LicenseValidator(public_key, revocation_list=...)` — any license whose
 ID is on the list fails validation with `revoked`.
 
+### SQLite State Store & In-App License Activation (v2)
+
+Instead of scattering `license.lic` / `trial_key.pem` / clock-state
+files across the user's disk, py-rizmi can keep **all state in one
+tamper-evident SQLite database** (per-app, in the OS user-data dir):
+
+- every row is HMAC-verified against a machine+app-bound key before use —
+  editing the SQL data is always **detected** and rejected (`tampered`);
+- the vendor public key stays **compiled into your binary** — never in
+  writable storage — protected by a SHA-256 fingerprint self-check;
+- each app passes its own `app_name`, so multiple py-rizmi apps on one
+  machine cannot read or overwrite each other's state.
+
+```bash
+rizmi keys fingerprint --public keys/public_key.pem   # paste into your source
+```
+
+```python
+from py_rizmi import (
+    RizmiConfig, LicenseActivator, LicenseWatchdog, StateStore,
+    TrialManager, key_fingerprint, pin_fingerprint,
+)
+
+VENDOR_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
+...your embedded public key...
+-----END PUBLIC KEY-----"""
+VENDOR_KEY_FINGERPRINT = "sha256-hex-from-rizmi-keys-fingerprint"
+
+# Startup gate: refuse to run if either constant was patched.
+pin_fingerprint(VENDOR_PUBLIC_KEY, VENDOR_KEY_FINGERPRINT)
+
+config = RizmiConfig(use_sqlite=True, app_name="MyProduct")
+store = StateStore(config.db_path or StateStore.default_path("MyProduct"),
+                   machine_id=MachineFingerprint.get_machine_id(),
+                   app_name="MyProduct")
+activator = LicenseActivator(store, VENDOR_PUBLIC_KEY)
+
+# ── In-app license entry (developer-hosted UI) ──────────────────────
+# Method A — user pastes the license token into your text field:
+result = activator.activate_token(pasted_text.strip())
+# Method B — user picks their license.lic file:
+result = activator.activate_file(chosen_path)
+
+if result.ok:
+    print(f"Licensed to {result.payload.client}")   # accepted
+else:
+    show_error(result.reason)   # 'tampered', 'hwid_mismatch', 'expired', ...
+```
+
+Activation runs the **full validation chain** (signature → expiry → HWID →
+revocation → clock guard) *before* anything is stored; only valid licenses
+are accepted. `activator.current()` re-validates on every read.
+
+Trials work in SQLite mode too:
+
+```python
+trial = TrialManager(
+    config_dir="path/to/app-config", trial_days=14,
+    public_key=VENDOR_PUBLIC_KEY,
+    use_sqlite=True, db_path=store.db_path, app_name="MyProduct",
+)
+status = trial.start_or_check()
+```
+
+> **Packaged apps (Nuitka / PyInstaller):** works unchanged. Paths never
+> derive from `__file__`; prefer Nuitka (`--include-package=py_rizmi`) —
+> compiled constants resist public-key patching far better than archive-
+> based packagers.
+>
+> **Honest threat model:** local storage is tamper-*evident*, not
+> tamper-proof. A determined reverse engineer with a debugger wins; this
+> raises the bar against casual-to-moderate piracy, which is where the
+> real volume is.
+
 ### Trial Period — License-Free Evaluation
 
 Let clients use your app for N days without any license file. On first

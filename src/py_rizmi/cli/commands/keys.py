@@ -237,3 +237,35 @@ def keys_verify(
 
     if not match:
         raise typer.Exit(1)
+
+
+@app.command("fingerprint")
+def keys_fingerprint(
+    public: Annotated[
+        Path,
+        typer.Option("--public", "-P", help="Path to the public key PEM."),
+    ],
+) -> None:
+    """Print the SHA-256 fingerprint of a public key PEM.
+
+    Paste this constant next to your embedded public key and call
+    ``pin_fingerprint(key, fingerprint)`` at startup — py-rizmi then
+    refuses to run if either constant is patched.
+    """
+    from py_rizmi.core.keypin import key_fingerprint
+
+    if not public.exists():
+        _error(f"File not found: [bold]{public}[/]")
+        raise typer.Exit(1)
+    digest = key_fingerprint(public.read_text())
+    console.print()
+    console.print(
+        Panel(
+            f"[bold green]{digest}[/]\n\n[dim]Embed this next to your public key "
+            "constant and verify with pin_fingerprint() at startup.[/]",
+            title="Public-key fingerprint (SHA-256 of PEM)",
+            border_style="green",
+            padding=(0, 2),
+        )
+    )
+    console.print()
