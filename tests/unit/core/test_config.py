@@ -24,7 +24,6 @@ class TestDefaults:
         assert c.key_size == 2048
         assert c.algorithm == "RS256"
         assert c.exp_days == 365
-        assert c.swap_valid_minutes == 60
         assert c.crl_next_update_hours == 24
         assert c.app_name == "py-rizmi"
 
@@ -32,7 +31,7 @@ class TestDefaults:
 class TestValidation:
     @pytest.mark.parametrize(
         "field", ["trial_days", "watchdog_interval_seconds", "max_clients",
-                  "exp_days", "swap_valid_minutes", "crl_next_update_hours"]
+                  "exp_days", "crl_next_update_hours"]
     )
     def test_positive_fields_reject_zero_and_negative(self, field):
         with pytest.raises(ValueError, match=field):

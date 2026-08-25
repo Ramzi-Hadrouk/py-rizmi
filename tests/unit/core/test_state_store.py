@@ -65,7 +65,7 @@ def test_app_namespacing_blocks_transplant(tmp_path: Path) -> None:
 
 def test_schema_version_enforced(tmp_path: Path) -> None:
     db = tmp_path / "s.db"
-    store = StateStore(db, machine_id="m1", app_name="MyApp")
+    StateStore(db, machine_id="m1", app_name="MyApp")
     conn = sqlite3.connect(db)
     conn.execute("UPDATE store_meta SET value='99' WHERE key='schema_version'")
     conn.commit()

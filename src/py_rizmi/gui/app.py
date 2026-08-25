@@ -17,7 +17,6 @@ from .views.hwid_view import HWIDTab as HWIDView
 from .views.keymanager_view import KeyManagerTab as KeyManagerView
 from .views.generate_view import GenerateTab as GenerateView
 from .views.viewer_view import ViewerTab as ViewerView
-from .views.swap_view import LicenseSwapTab as SwapView
 from .views.revocation_view import RevocationTab as RevocationView
 from .views.guide_view import GuideView
 
@@ -110,9 +109,8 @@ class LicenseToolApp(QMainWindow):
             ("Key Management", "keys", "Ctrl+2"),
             ("License Generation", "gen", "Ctrl+3"),
             ("License Viewer", "view", "Ctrl+4"),
-            ("License Swap", "swap", "Ctrl+5"),
-            ("Revocation", "revoke", "Ctrl+6"),
-            ("Integration Guide", "guide", "Ctrl+7"),
+            ("Revocation", "revoke", "Ctrl+5"),
+            ("Integration Guide", "guide", "Ctrl+6"),
         ]
         for label, key, shortcut in nav_items:
             action = QAction(label, self)
@@ -224,7 +222,6 @@ class LicenseToolApp(QMainWindow):
         add_nav("keys", "Key Management")
         add_nav("gen", "License Generation")
         add_nav("view", "License Viewer")
-        add_nav("swap", "License Swap")
         add_nav("revoke", "Revocation")
         add_nav("guide", "Integration Guide")
 
@@ -243,7 +240,6 @@ class LicenseToolApp(QMainWindow):
         self.views["keys"] = KeyManagerView(self)
         self.views["gen"] = GenerateView(self.views["hwid"].get_hwid, self)  # type: ignore[attr-defined]
         self.views["view"] = ViewerView(self)
-        self.views["swap"] = SwapView(self)
         self.views["revoke"] = RevocationView(self)
         self.views["guide"] = GuideView(self)
 
@@ -258,7 +254,7 @@ class LicenseToolApp(QMainWindow):
         for key, btn in self.nav_buttons.items():
             btn.setChecked(key == name)
 
-        index_map = ["hwid", "keys", "gen", "view", "swap", "revoke", "guide"]
+        index_map = ["hwid", "keys", "gen", "view", "revoke", "guide"]
         if name in index_map:
             self.stack.setCurrentIndex(index_map.index(name))
 

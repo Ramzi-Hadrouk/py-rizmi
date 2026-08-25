@@ -1,7 +1,6 @@
 """Tests for TrialManager SQLite mode and legacy state migration."""
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -44,13 +43,9 @@ def test_full_cycle_issue_active_tamper(sqlite_trial) -> None:
     assert status.state == "trial_active"
     assert status.days_left > 0
     # tamper with the trial license row
-    import json
     import sqlite3
 
     db = Path(tm._store.db_path)
-    with sqlite3.connect(db) as conn:
-        role = [r[0] for r in conn.execute("SELECT role FROM keys")]
-    # corrupt the trial public key PEM (breaks its HMAC)
     with sqlite3.connect(db) as conn:
         conn.execute("UPDATE keys SET pem='forged' WHERE role='trial_public'")
         conn.commit()

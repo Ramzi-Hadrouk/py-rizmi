@@ -46,7 +46,7 @@ app = typer.Typer(
 
 # Register sub-apps
 app.add_typer(keys_app,       name="keys",       help="RSA keypair generation and management.")
-app.add_typer(license_app,    name="license",    help="License file issuance, validation, inspection, and swap authorization.")
+app.add_typer(license_app,    name="license",    help="License file issuance, validation, and inspection.")
 app.add_typer(machine_id_app, name="machine-id", help="Get this machine's hardware fingerprint (HWID).")
 app.add_typer(trial_app, name="trial", help="License-free trial period status and management.")
 
@@ -151,9 +151,6 @@ def _print_help() -> None:
     table.add_row("license issue",        "Sign and issue a new .lic license file")
     table.add_row("license validate",     "Validate a .lic against public key + this machine's HWID")
     table.add_row("license inspect",      "Decode and inspect a .lic without HWID/expiry check")
-    table.add_row("license create-swap-request", "Build a swap request JSON for the author to sign")
-    table.add_row("license sign-swap",    "Locally sign a license swap request file")
-    table.add_row("license verify-swap",  "Verify a signed license swap authorization file")
     table.add_row("license revoke",       "Publish a signed revocation list for license IDs")
     table.add_row("",                     "")
     table.add_row("machine-id",           "Print this machine's hardware fingerprint (HWID)")

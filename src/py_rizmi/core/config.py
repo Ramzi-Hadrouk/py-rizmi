@@ -79,8 +79,7 @@ class RizmiConfig:
     algorithm: str = "RS256"
     exp_days: int = 365
 
-    # ── swap / revocation ────────────────────────────────────────────
-    swap_valid_minutes: int = 60
+    # ── revocation ───────────────────────────────────────────────────
     crl_next_update_hours: int = 24
 
     # ── naming ────────────────────────────────────────────────────────
@@ -99,7 +98,6 @@ class RizmiConfig:
         _require_non_negative(self.grace_days, "grace_days")
         _require_positive(self.max_clients, "max_clients")
         _require_positive(self.exp_days, "exp_days")
-        _require_positive(self.swap_valid_minutes, "swap_valid_minutes")
         _require_positive(self.crl_next_update_hours, "crl_next_update_hours")
 
         if self.mode not in ALLOWED_MODES:

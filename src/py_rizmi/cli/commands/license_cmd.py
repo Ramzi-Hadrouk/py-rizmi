@@ -14,11 +14,6 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from py_rizmi.cli.commands.swap_cmd import (
-    license_create_swap_request,
-    license_sign_swap,
-    license_verify_swap,
-)
 from py_rizmi.core.license_issuer import LicenseIssuer
 from py_rizmi.core.license_validator import ERROR_MESSAGES, LicenseValidator
 from py_rizmi.core.revocation import (
@@ -30,20 +25,11 @@ from py_rizmi.models.license_payload import LicensePayload
 
 app = typer.Typer(
     name="license",
-    help="License file issuance, validation, inspection, and swap authorization.",
+    help="License file issuance, validation, and inspection.",
     no_args_is_help=True,
 )
 console = Console()
 err_console = Console(stderr=True)
-
-
-# Register swap commands defined in swap_cmd module
-app.command("create-swap-request")(license_create_swap_request)
-app.command("sign-swap")(license_sign_swap)
-app.command("verify-swap")(license_verify_swap)
-# Backward-compat aliases (hidden)
-app.command("authorize-replacement", hidden=True)(license_sign_swap)
-app.command("verify-replacement", hidden=True)(license_verify_swap)
 
 
 

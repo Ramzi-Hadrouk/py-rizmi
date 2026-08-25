@@ -19,16 +19,10 @@ from py_rizmi.core.revocation import (
 )
 from py_rizmi.core.runtime_guard import LicenseWatchdog, LicenseWatchdogError
 from py_rizmi.core.trial import TrialManager, TrialStatus
-from py_rizmi.core.swap_auth import (
-    create_replacement_authorization_payload,
-    create_swap_request,
-    sign_authorization_payload,
-    sign_swap_request,
-    verify_authorization,
-    verify_swap_authorization,
-)
+from py_rizmi.core.state_store import StateStore
+from py_rizmi.core.license_activator import ActivationResult, LicenseActivator
+from py_rizmi.core.keypin import KeyPinError, key_fingerprint, pin_fingerprint
 from py_rizmi.models.license_payload import LicensePayload
-from py_rizmi.models.swap_payload import LicenseSwapPayload, ReplacementAuthorizationPayload
 
 __all__ = [
     "__version__",
@@ -43,15 +37,13 @@ __all__ = [
     "verify_revocation_list",
     "TrialManager",
     "TrialStatus",
+    "StateStore",
+    "LicenseActivator",
+    "ActivationResult",
+    "KeyPinError",
+    "key_fingerprint",
+    "pin_fingerprint",
     "KeyPair",
     "MachineFingerprint",
     "LicensePayload",
-    "LicenseSwapPayload",
-    "ReplacementAuthorizationPayload",
-    "create_swap_request",
-    "create_replacement_authorization_payload",
-    "sign_swap_request",
-    "sign_authorization_payload",
-    "verify_swap_authorization",
-    "verify_authorization",
 ]
