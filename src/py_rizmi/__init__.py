@@ -20,7 +20,8 @@ from py_rizmi.core.revocation import (
 from py_rizmi.core.runtime_guard import LicenseWatchdog, LicenseWatchdogError
 from py_rizmi.core.trial import TrialManager, TrialStatus
 from py_rizmi.core.state_store import StateStore
-from py_rizmi.core.license_activator import ActivationResult, LicenseActivator
+from py_rizmi.core.license_activator import ActivationResult, LicenseActivator, LicenseStatus
+from py_rizmi.core.license_gate import LicenseGate
 from py_rizmi.core.keypin import KeyPinError, key_fingerprint, pin_fingerprint
 from py_rizmi.models.license_payload import LicensePayload
 
@@ -40,6 +41,8 @@ __all__ = [
     "StateStore",
     "LicenseActivator",
     "ActivationResult",
+    "LicenseStatus",
+    "LicenseGate",
     "KeyPinError",
     "key_fingerprint",
     "pin_fingerprint",
