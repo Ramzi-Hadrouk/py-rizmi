@@ -2,12 +2,9 @@
    Pages contain <div id="site-chrome"></div> and <div class="shell">…  */
 (function () {
   document.addEventListener("DOMContentLoaded", function () {
-    /* base path under GitHub Pages: /py-rizmi/ */
-    var parts = location.pathname.split("/").filter(Boolean);
-    var base = "/";
-    if (parts.length > 0) base = "/" + parts[0] + "/";
-
-    var current = parts.length > 1 ? parts[parts.length - 1] : "index.html";
+    /* All pages are flat in one directory — RELATIVE paths work on
+       file://, localhost, and GitHub Pages (/py-rizmi/) alike. */
+    var current = location.pathname.split("/").pop() || "index.html";
 
     /* ── sidebar ─────────────────────────────────────────── */
     var groups = [
@@ -29,15 +26,15 @@
     ];
 
     var sidebarHTML =
-      '<a class="brand" href="' + base + '">' +
-      '<img src="' + base + 'assets/logo.png" alt="py-Rizmi logo">' +
+      '<a class="brand" href="index.html">' +
+      '<img src="assets/logo.png" alt="py-Rizmi logo">' +
       '<span class="name">py-<span>Rizmi</span></span></a>';
 
     groups.forEach(function (g) {
       sidebarHTML += '<div class="nav-group"><h4>' + g[0] + "</h4>";
       g[1].forEach(function (link) {
         var cls = link[1] === current ? " active" : "";
-        sidebarHTML += '<a class="' + cls.trim() + '" href="' + base + link[1] + '">' + link[0] + "</a>";
+        sidebarHTML += '<a class="' + cls.trim() + '" href="' + link[1] + '">' + link[0] + "</a>";
       });
       sidebarHTML += "</div>";
     });
@@ -56,7 +53,7 @@
       topbar.innerHTML =
         '<button class="hamburger" id="nav-toggle" aria-label="Menu">&#9776;</button>' +
         '<a class="tb" href="#" id="back-btn">&larr; Back</a>' +
-        '<a class="tb" href="' + base + '">Home</a>' +
+        '<a class="tb" href="index.html">Home</a>' +
         '<span class="spacer"></span>' +
         '<button class="tb" id="theme-toggle" aria-label="Toggle theme">' +
         '<span class="sun">&#9728;&#65039;</span><span class="moon">&#127769;</span>' +
@@ -69,7 +66,7 @@
       back.addEventListener("click", function (e) {
         e.preventDefault();
         if (history.length > 1) history.back();
-        else location.href = base;
+        else location.href = "index.html";
       });
     }
 
@@ -90,14 +87,19 @@
       toggle.addEventListener("click", function () {
         var root = document.documentElement;
         var dark = root.getAttribute("data-theme") === "dark";
-        if (dark) {
-          root.removeAttribute("data-theme");
-          localStorage.setItem("rz-theme", "light");
-        } else {
-          root.setAttribute("data-theme", "dark");
-          localStorage.setItem("rz-theme", "dark");
-        }
+        var next = dark ? "light" : "dark";
+        if (next === "dark") root.setAttribute("data-theme", "dark");
+        else root.removeAttribute("data-theme");
+        try { localStorage.setItem("rz-theme", next); } catch (e) {}
       });
     }
+
+    /* keep theme consistent if the user toggles in another tab */
+    window.addEventListener("storage", function (e) {
+      if (e.key !== "rz-theme") return;
+      var root = document.documentElement;
+      if (e.newValue === "dark") root.setAttribute("data-theme", "dark");
+      else root.removeAttribute("data-theme");
+    });
   });
 })();

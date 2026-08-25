@@ -4,6 +4,7 @@
    ============================================================ */
 
 :root {
+  color-scheme: light;
   /* paper page */
   --bg: #faf7f2;
   --bg-alt: #ffffff;
@@ -26,6 +27,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg: #1e2126;
   --bg-alt: #262a30;
   --bg-inset: #22262b;
@@ -40,6 +42,17 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* smooth, uniform theme switch: every element transitions together */
+body,
+body * {
+  transition:
+    background-color .25s ease,
+    border-color .25s ease,
+    color .12s ease;
+}
+/* keep interactive snappiness; exclude layout-affecting props */
+pre, .card, .note { transition: background-color .25s ease, box-shadow .25s ease; }
+
 html { scroll-behavior: smooth; }
 
 body {
@@ -47,7 +60,6 @@ body {
   background: var(--bg);
   color: var(--fg);
   line-height: 1.75;
-  transition: background .25s ease, color .25s ease;
 }
 
 a { color: var(--accent-strong); text-decoration: none; }
