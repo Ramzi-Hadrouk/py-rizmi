@@ -24,7 +24,7 @@ import sqlite3
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger("license")
 
@@ -190,20 +190,35 @@ class StateStore:
             )
 
     def get(self, role: str) -> Optional[Dict[str, Any]]:
-        with self._connect() as conn:
-            row = conn.execute(
-                "SELECT payload, hmac FROM state WHERE role = ?", [role]
-            ).fetchone()
+        """Return the payload only when its HMAC verifies; None otherwise."""
+        data, ok = self.get_verified(role)
+        return data if ok else None
+
+    def get_verified(self, role: str) -> Tuple[Optional[Dict[str, Any]], bool]:
+        """Return (payload, verified). verified=False covers both a
+        missing role (payload None) and a present-but-tampered role."""
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT payload, hmac FROM state WHERE role = ?", [role]
+                ).fetchone()
+        except sqlite3.DatabaseError:
+            # unreadable/foreign file: treat as missing, never crash callers
+            return None, False
         if row is None:
-            return None
+            return None, False
         payload_text, expected = str(row[0]), str(row[1])
         if not hmac.compare_digest(
             self._mac("state", role, payload_text.encode("utf-8")), expected
         ):
             logger.warning("State store: role %r failed integrity check", role)
-            return None
+            try:
+                forged: Dict[str, Any] = json.loads(payload_text)
+            except json.JSONDecodeError:
+                return None, False
+            return forged, False
         result: Dict[str, Any] = json.loads(payload_text)
-        return result
+        return result, True
 
     def delete(self, role: str) -> None:
         with self._connect() as conn:
