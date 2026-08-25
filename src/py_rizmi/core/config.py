@@ -30,7 +30,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 ALLOWED_KEY_SIZES = (2048, 3072, 4096)
 ALLOWED_MODES = ("offline", "online")
@@ -86,6 +86,12 @@ class RizmiConfig:
     # ── naming ────────────────────────────────────────────────────────
     app_name: str = "py-rizmi"
 
+    # ── SQLite state store ────────────────────────────────────────────
+    use_sqlite: bool = False
+    db_path: Optional[str] = None
+    allow_default_namespace: bool = False
+    shared_clock_namespace: bool = False
+
     def __post_init__(self) -> None:
         _require_positive(self.trial_days, "trial_days")
         _require_positive(self.watchdog_interval_seconds, "watchdog_interval_seconds")
@@ -108,6 +114,17 @@ class RizmiConfig:
             )
         if not self.app_name or not isinstance(self.app_name, str):
             raise ValueError("app_name must be a non-empty string")
+
+        for bool_field in (
+            "use_sqlite",
+            "allow_default_namespace",
+            "shared_clock_namespace",
+        ):
+            value = getattr(self, bool_field)
+            if not isinstance(value, bool):
+                raise ValueError(f"{bool_field} must be a boolean")
+        if self.db_path is not None and not isinstance(self.db_path, str):
+            raise ValueError("db_path must be a string or None")
 
     # ── convenience helpers ───────────────────────────────────────────
 
