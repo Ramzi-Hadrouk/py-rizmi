@@ -9,7 +9,6 @@ import pytest
 from py_rizmi.core.license_issuer import LicenseIssuer
 from py_rizmi.core.keypair import KeyPairManager
 from py_rizmi.core.license_gate import LicenseGate
-from py_rizmi.models.license_payload import LicensePayload
 
 
 @pytest.fixture()
