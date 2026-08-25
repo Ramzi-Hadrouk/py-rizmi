@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-08-25
+
+### Added
+- **SQLite State Store (v2 architecture)**: `StateStore` — a single per-app, namespaced, tamper-evident SQLite database (stdlib only). Every row is HMAC-verified against a machine+app-bound key before use; editing or transplanting SQL data is always **detected** and rejected.
+- **In-App License Activation**: `LicenseActivator` with two developer-hosted entry methods — `activate_token()` (user pastes the license into your UI) and `activate_file()` (user picks their `license.lic`). Full validation chain runs *before* anything is stored; `current()` re-validates on every read.
+- **Public-Key Pinning**: `pin_fingerprint()` / `key_fingerprint()` + new CLI `rizmi keys fingerprint` — the embedded vendor public key is verified against a SHA-256 fingerprint constant at startup, refusing to run if either constant is patched.
+- **Frozen-Build Support**: `_internal.env` detects Nuitka/PyInstaller; all state paths resolve from platformdirs user-data (never `__file__`). E2E smoke test runs the whole flow inside a compiled Nuitka standalone binary.
+- **Multi-App Namespacing**: mandatory per-app `app_name` keys the HMAC and selects the storage directory; the unsafe `"py-rizmi"` default is refused in production use. Optional `shared_clock_namespace=True` gives all of one vendor's apps a collective clock-rollback ratchet.
+
+### Changed
+- **BREAKING**: the license-swap / replacement-authorization feature is removed entirely (`core/swap_auth.py`, `models/swap_payload.py`, `rizmi license create-swap-request|sign-swap|verify-swap`, the GUI Swap view) — it duplicated revocation + reissue workflows and confused developers.
+- **BREAKING**: `RizmiConfig.swap_valid_minutes` removed; added `use_sqlite`, `db_path`, `allow_default_namespace`, `shared_clock_namespace`.
+- `TrialManager(use_sqlite=True)` stores trial keypairs, the trial license and clock marks in the StateStore — no loose files in the config dir. File-based mode remains fully supported (legacy).
+- `migrate_legacy_state()` imports file-era trial state into the store (idempotent).
+
+### Security
+- ClockGuard high-water marks now live redundantly in the DB *plus* one obfuscated fallback file: deleting either alone cannot reset the anti-rollback ratchet. Rollback refusal logic unchanged and covered by tests.
+
 ## [1.6.0] - 2026-08-23
 
 ### Added
