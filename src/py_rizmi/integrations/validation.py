@@ -36,14 +36,19 @@ def get_public_key(config_dir: str) -> str:
         return f.read()
 
 
-def _obfuscated_name(role: str, hidden: bool) -> str:
-    """A fixed-but-meaningless filename for *role* -- the same role
-    always yields the same name (so we can find our own file again on
+def _obfuscated_name(app_name: str, role: str, hidden: bool) -> str:
+    """A fixed-but-meaningless filename for (app_name, role) -- the same
+    pair always yields the same name (so we can find our own file again on
     the next run), but nothing about the name suggests clock or license
-    data. Each role gets a DIFFERENT name, so finding one copy on disk
-    doesn't tell you what the others are called.
+    data. The hash INCLUDES *app_name* so two py-rizmi-based apps produce
+    different filenames even if their state files ever share a directory
+    (multi-app machines must not collide). Each role gets a DIFFERENT
+    name, so finding one copy on disk doesn't tell you what the others
+    are called.
     """
-    digest = hashlib.sha256(_FILENAME_SALT + b":" + role.encode()).hexdigest()[:16]
+    digest = hashlib.sha256(
+        _FILENAME_SALT + app_name.encode("utf-8") + b":" + role.encode("utf-8")
+    ).hexdigest()[:16]
     prefix = "." if hidden else ""  # Unix dotfile convention only; see below
     return f"{prefix}{digest}.dat"
 
@@ -132,10 +137,10 @@ def _default_state_paths(config_dir: str, app_name: str = "py-rizmi") -> List[st
     hidden = sys.platform != "win32"  # dotfiles are a Unix convention;
     # a leading "." looks unusual (and therefore MORE noticeable, the
     # opposite of the goal) inside a normal Windows AppData tree.
-    paths = [os.path.join(config_dir, _obfuscated_name("primary", hidden))]
+    paths = [os.path.join(config_dir, _obfuscated_name(app_name, "primary", hidden))]
     dir_a, dir_b = _platform_dirs(app_name)
-    paths.append(os.path.join(dir_a, _obfuscated_name("a", hidden)))
-    paths.append(os.path.join(dir_b, _obfuscated_name("b", hidden)))
+    paths.append(os.path.join(dir_a, _obfuscated_name(app_name, "a", hidden)))
+    paths.append(os.path.join(dir_b, _obfuscated_name(app_name, "b", hidden)))
     return paths
 
 
