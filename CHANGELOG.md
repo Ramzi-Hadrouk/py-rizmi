@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- CI: frozen-smoke e2e test now passes the build directory to Nuitka in the
+  glued `--output-dir=<value>` form (newer Nuitka rejects the separated form).
+- Docs site: added author/copyright/OG metadata and JSON-LD structured data,
+  plus `robots.txt` and `sitemap.xml`, so search engines index the pages and
+  correctly associate py-Rizmi with its author.
+
 ## [2.1.0] - 2026-08-25
 
 ### Added
