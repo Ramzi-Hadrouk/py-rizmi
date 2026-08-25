@@ -33,7 +33,7 @@ def test_frozen_smoke(tmp_path: Path) -> None:
             nuitka_cmd,
             "--standalone",
             "--include-package=py_rizmi",
-            "--output-dir", str(build_dir),
+            f"--output-dir={build_dir}",
             str(SMOKE_MAIN),
         ],
         check=True,

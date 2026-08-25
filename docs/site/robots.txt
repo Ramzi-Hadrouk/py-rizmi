@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ramzi-hadrouk.github.io/py-rizmi/sitemap.xml
