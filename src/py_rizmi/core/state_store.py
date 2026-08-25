@@ -305,33 +305,38 @@ class StateStore:
         return token
 
     def active_license(self) -> Optional[StoredLicense]:
+        return self._read_active(verify=True)
+
+    def active_license_unverified(self) -> Optional[StoredLicense]:
+        """Raw active-slot row WITHOUT HMAC verification.
+
+        Lets callers distinguish 'no license ever' from 'license row
+        present but tampered' — the latter must surface as
+        licensed_invalid, never silently fall back to trial.
+        """
+        return self._read_active(verify=False)
+
+    def _read_active(self, *, verify: bool) -> Optional[StoredLicense]:
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT license_id, token, activated_at FROM licenses "
+                "SELECT license_id, token, hmac, activated_at FROM licenses "
                 "WHERE slot='active'"
             ).fetchone()
         if row is None:
             return None
-        license_id, token, activated_at = row
-        if not hmac.compare_digest(
-            self._mac("licenses", license_id, token.encode("utf-8")),
-            self._active_hmac(license_id),
+        license_id, token, stored_hmac, activated_at = (
+            str(row[0]), str(row[1]), str(row[2]), int(row[3]),
+        )
+        if verify and not hmac.compare_digest(
+            self._mac("licenses", license_id, token.encode("utf-8")), stored_hmac
         ):
             logger.warning(
                 "State store: active license %r failed integrity check", license_id
             )
             return None
         return StoredLicense(
-            license_id=license_id, token=token, activated_at=int(activated_at)
+            license_id=license_id, token=token, activated_at=activated_at
         )
-
-    def _active_hmac(self, license_id: str) -> str:
-        with self._connect() as conn:
-            row = conn.execute(
-                "SELECT hmac FROM licenses WHERE slot='active' AND license_id=?",
-                [license_id],
-            ).fetchone()
-        return row[0] if row else ""
 
     # ── integrity report ──────────────────────────────────────────────
 

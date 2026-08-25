@@ -31,6 +31,27 @@ from py_rizmi.core.trial import TrialManager
 logger = logging.getLogger("license")
 
 
+class _GateValidatorAdapter:
+    """Adapts LicenseActivator to the LicenseWatchdog validator protocol.
+
+    The watchdog calls ``validate_from_file(path)``; we instead
+    re-validate the store's active license token directly.
+    """
+
+    def __init__(self, activator: LicenseActivator) -> None:
+        self._activator = activator
+
+    def validate_from_file(self, license_path: str, check_hwid: bool = True):  # type: ignore[no-untyped-def]
+        payload, reason = self._activator.current_or_reason()
+        if payload is None:
+            raise ValueError(reason or "missing")
+        return payload
+
+
+def _gate_status_summary(gate: "LicenseGate") -> dict[str, object]:
+    return gate.check().to_dict()
+
+
 class LicenseGate:
     """Single entry point for licensing an application.
 
@@ -68,6 +89,10 @@ class LicenseGate:
         check_hwid: bool = True,
         hwid_provider: Optional[Callable[[], str]] = None,
         enable_clock_guard: bool = True,
+        enable_watchdog: bool = False,
+        interval_seconds: int = 600,
+        on_violation: Optional[Callable[[str, str], None]] = None,
+        on_valid: Optional[Callable[[Any], None]] = None,
     ) -> None:
         if not app_name or not isinstance(app_name, str):
             raise ValueError("app_name must be a non-empty string")
@@ -107,6 +132,20 @@ class LicenseGate:
             enable_clock_guard=enable_clock_guard,
         )
 
+        # ── optional runtime watchdog ─────────────────────────────────
+        self._watchdog: Any = None
+        if enable_watchdog:
+            from py_rizmi.core.runtime_guard import LicenseWatchdog
+
+            self._watchdog = LicenseWatchdog(
+                _GateValidatorAdapter(self.activator),
+                str(resolved_db) + "::active",  # sentinel path; adapter reads store
+                interval_seconds=interval_seconds,
+                on_violation=on_violation or (lambda reason, detail: None),
+                on_valid=on_valid,
+                strict_start=False,
+            )
+
     # ── lifecycle ─────────────────────────────────────────────────────
 
     def start(self) -> LicenseStatus:
@@ -116,22 +155,24 @@ class LicenseGate:
 
     def check(self) -> LicenseStatus:
         """Current state without side effects (real license → trial)."""
-        trial_status = self._trial.check()
-        # A real license in the store outranks whatever the trial says;
-        # TrialManager already implements that precedence, but when the
-        # trial layer reports missing/no_trial while an active license
-        # exists we surface the licensed path directly.
-        if trial_status.state in ("missing", "no_trial"):
-            active = self.store.active_license()
-            if active is not None:
-                payload, reason = self.activator.current_or_reason()
-                if payload is not None:
-                    return LicenseStatus.from_activation(
-                        ActivationResult(ok=True, payload=payload)
-                    )
-                return LicenseStatus(
-                    state="licensed_invalid", ok=False, reason=reason
+        # 1. A real license ALWAYS outranks the trial — including a
+        #    tampered one, which must surface as licensed_invalid and
+        #    never silently fall back to the trial (D10).
+        raw = self.store.active_license_unverified()
+        if raw is not None:
+            payload, reason = self.activator.current_or_reason()
+            if payload is not None:
+                return LicenseStatus.from_activation(
+                    ActivationResult(ok=True, payload=payload)
                 )
+            return LicenseStatus(
+                state="licensed_invalid",
+                ok=False,
+                reason=reason,
+                message=f"License invalid: {reason}",
+            )
+        # 2. No real license → trial / missing.
+        trial_status = self._trial.check()
         if trial_status.state == "licensed":
             return self._licensed_status(trial_status)
         return LicenseStatus(
@@ -155,6 +196,20 @@ class LicenseGate:
 
     def deactivate(self) -> None:
         self.activator.deactivate()
+
+    def status_summary(self) -> dict[str, object]:
+        """JSON-serializable current state (for UIs / support tickets)."""
+        return self.check().to_dict()
+
+    def recheck_now(self) -> None:
+        """Run one watchdog poll synchronously (tests + on-demand checks)."""
+        if self._watchdog is not None:
+            self._watchdog.check_once()
+
+    def start_watchdog(self) -> None:
+        """Begin background re-validation (long-running apps)."""
+        if self._watchdog is not None:
+            self._watchdog.start()
 
     # ── helpers ───────────────────────────────────────────────────────
 
