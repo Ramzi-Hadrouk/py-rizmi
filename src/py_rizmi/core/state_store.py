@@ -224,6 +224,25 @@ class StateStore:
         with self._connect() as conn:
             conn.execute("DELETE FROM state WHERE role = ?", [role])
 
+    # ── meta ──────────────────────────────────────────────────────────
+
+    def put_meta(self, key: str, value: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO store_meta(key, value) VALUES (?, ?)",
+                [key, value],
+            )
+
+    def get_meta(self, key: str) -> Optional[str]:
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT value FROM store_meta WHERE key = ?", [key]
+                ).fetchone()
+        except sqlite3.DatabaseError:
+            return None
+        return str(row[0]) if row else None
+
     # ── key material ──────────────────────────────────────────────────
 
     def put_key(self, role: str, pem: str) -> None:
