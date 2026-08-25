@@ -80,6 +80,16 @@
           document.body.classList.remove("nav-open");
         });
       });
+      /* backdrop: click anywhere outside the drawer to close it */
+      var scrim = document.createElement("div");
+      scrim.className = "scrim";
+      scrim.addEventListener("click", function () {
+        document.body.classList.remove("nav-open");
+      });
+      document.body.appendChild(scrim);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") document.body.classList.remove("nav-open");
+      });
     }
 
     var toggle = document.getElementById("theme-toggle");

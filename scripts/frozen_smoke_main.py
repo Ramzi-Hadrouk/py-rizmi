@@ -77,8 +77,11 @@ def main() -> int:
         status3 = tm2.check()
         if status3.state != "tampered":
             print(f"FAIL: tamper not detected, got {status3.state}")
-            return 3
+            return 4
         print("tamper detected OK")
+        # distinct exit code for the tamper-detection scenario so the
+        # e2e test can tell "detected" apart from a plain clean run
+        return 3
 
     if not is_frozen():
         # running under plain python is fine too — just report it
