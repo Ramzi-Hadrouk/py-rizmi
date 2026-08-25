@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packaging — py-Rizmi</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<script src="assets/header.js"></script>
+
+<section class="hero" style="border-top:none;padding-bottom:30px;">
+  <div class="container"><h1>Packaging &amp; compiled apps</h1>
+  <p class="sub">py-rizmi is tested end-to-end inside compiled binaries. Here's what matters.</p></div>
+</section>
+
+<section><div class="container">
+  <h2>Nuitka (recommended)</h2>
+<pre><code>nuitka --standalone --onefile \
+    --include-package=py_rizmi \
+    --output-dir=dist main.py
+
+# PyQt6 toolkit apps: add --enable-plugin=pyqt6</code></pre>
+  <ul style="color:var(--muted);margin-left:20px;">
+    <li><code>sqlite3</code> is stdlib — no extra data files to declare.</li>
+    <li>Compiles your embedded public key and fingerprint constants into native C. Patching them means rebuilding the binary — a far higher bar than editing an archive.</li>
+    <li>An e2e test in the repo builds a Nuitka standalone and runs the whole activate → tamper → detect cycle inside it on every release.</li>
+  </ul>
+
+  <h2 style="margin-top:34px;">PyInstaller</h2>
+<pre><code>pyinstaller --onefile main.py
+# plain import works; no hidden-import needed for py_rizmi core</code></pre>
+  <div class="note warn">PyInstaller archives are trivially extractable — bytecode and embedded constants can be read and patched with off-the-shelf tools. Functional, but choose Nuitka when licensing strength matters.</div>
+
+  <h2 style="margin-top:34px;">The one rule that makes both work</h2>
+  <p><b>Never derive state paths from <code>__file__</code>.</b> Nuitka onefile extracts to a temp dir wiped at exit; PyInstaller's <code>__file__</code> points inside <code>_MEIPASS</code>. py-rizmi already handles this: writable state always resolves to the platformdirs user-data location:</p>
+  <table class="doc">
+    <tr><th>OS</th><th>State DB location</th></tr>
+    <tr><td>Linux</td><td><code>~/.local/share/&lt;AppName&gt;/state.db</code></td></tr>
+    <tr><td>macOS</td><td><code>~/Library/Application Support/&lt;AppName&gt;/state.db</code></td></tr>
+    <tr><td>Windows</td><td><code>%LOCALAPPDATA%\&lt;AppName&gt;\state.db</code></td></tr>
+  </table>
+
+  <h2 style="margin-top:34px;">What lives where</h2>
+  <table class="doc">
+    <tr><th></th><th>Compiled into the binary</th><th>state.db (writable)</th></tr>
+    <tr><td style="width:30%"><b>Vendor public key</b></td><td>✓ as a constant + pinned fingerprint</td><td>never</td></tr>
+    <tr><td><b>Private key</b></td><td>never (your issuing machine only)</td><td>never</td></tr>
+    <tr><td><b>Licenses / trial keys / clock marks</b></td><td>—</td><td>HMAC-verified rows + fallback file</td></tr>
+  </table>
+
+  <h2 style="margin-top:34px;">Release checklist</h2>
+  <ul style="color:var(--muted);margin-left:20px;line-height:1.9;">
+    <li><code>rizmi doctor run -a MyApp -P pub.pem --fingerprint &lt;hex&gt;</code> passes on a clean VM</li>
+    <li>First run starts a trial; second run continues it (not restarted)</li>
+    <li>System clock rolled back → blocked with <code>clock_tampering</code></li>
+    <li><code>state.db</code> deleted → protection intact via fallback marks</li>
+    <li>License issued for another machine → rejected <code>hwid_mismatch</code></li>
+  </ul>
+</div></section>
+
+<footer class="site"><div class="container">py-Rizmi Licensing · MIT · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">GitHub</a></div></footer>
+</body>
+</html>

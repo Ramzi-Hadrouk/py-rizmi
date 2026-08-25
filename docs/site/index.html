@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>py-Rizmi — Offline-first licensing for Python apps</title>
+<meta name="description" content="Cryptographically signed, hardware-bound, offline-first licensing for Python applications. SQLite tamper-evident state, 3-line integration, works compiled with Nuitka.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<script src="assets/header.js"></script>
+
+<section class="hero" style="border-top:none;">
+  <div class="container">
+    <div class="badges">
+      <span class="badge">v2.1</span>
+      <span class="badge">Python ≥ 3.12</span>
+      <span class="badge">MIT</span>
+      <span class="badge">Offline-first · RS256 · HWID-bound</span>
+    </div>
+    <h1>Licensing for Python apps,<br><em>without the server.</em></h1>
+    <p class="sub">RSA-signed licenses bound to each machine, tamper-evident local state in one SQLite file, trials that survive clock rollback — and a CLI that answers support tickets for you. Works compiled (Nuitka&nbsp;/&nbsp;PyInstaller), works offline.</p>
+    <div class="btn-row">
+      <a class="btn primary" href="quickstart.html">Get started — 5 minutes</a>
+      <a class="btn ghost" href="integration.html">Integration guide</a>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <h2>Everything a licensing SDK should have shipped.</h2>
+    <p class="lead">py-Rizmi covers the whole lifecycle: keys → issue → activate → enforce → revoke → diagnose. No accounts, no cloud dependency, no per-seat fees.</p>
+    <div class="grid">
+      <div class="card"><h3><span class="ico">🔑</span>Signed &amp; hardware-bound</h3><p>RS256 JWT licenses bound to an OS-level machine ID. A license issued for machine A fails on machine B with a precise error code.</p></div>
+      <div class="card"><h3><span class="ico">🗄️</span>One SQLite file</h3><p>Keys, licenses, trial state and clock marks live in a single per-app database. Every row is HMAC-verified against a machine+app-bound key before use — editing the data is always detected.</p></div>
+      <div class="card"><h3><span class="ico">⏱️</span>Anti-rollback clock guard</h3><p>A persisted high-water mark catches "wind the clock back and keep the trial". Redundant copies mean deleting one file (or the whole DB) resets nothing.</p></div>
+      <div class="card"><h3><span class="ico">🎁</span>Trial periods built in</h3><p>The app issues itself a self-signed trial on first run. Deleting the trial restarts nothing; buying a license supersedes the trial mid-evaluation.</p></div>
+      <div class="card"><h3><span class="ico">🧩</span>3-line integration</h3><p><code>LicenseGate</code> wires validation, trial, activation and watchdog behind one object with truthy statuses your UI can render directly.</p></div>
+      <div class="card"><h3><span class="ico">📦</span>Compiled-app ready</h3><p>Tested end-to-end inside Nuitka standalone binaries. Paths never derive from <code>__file__</code>; constants compile into C where patchers can't reach casually.</p></div>
+      <div class="card"><h3><span class="ico">🚫</span>Revocation lists</h3><p>Publish a signed list of revoked license IDs; validators reject revoked installs even fully offline. Bad signatures are rejected loudly, never silently ignored.</p></div>
+      <div class="card"><h3><span class="ico">🩺</span><code>rizmi doctor</code></h3><p>Machine ID readable? DB intact? Clock sane? Key pinned correctly? One command prints the checklist your support team was going to ask for anyway.</p></div>
+      <div class="card"><h3><span class="ico">🖥️</span>In-app activation UI</h3><p>Your app hosts the paste box or file picker; py-rizmi runs the full validation chain before anything is stored. Two methods: token or file.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Licensing in three lines</h2>
+    <p>After <code style="font-size:.95em">rizmi init MyApp</code> generates your keys and snippet:</p>
+<pre><code>from py_rizmi import LicenseGate
+
+gate = LicenseGate(app_name="MyApp", public_key=KEY,
+                   expected_fingerprint=FINGERPRINT, config_dir=cfg)
+
+status = gate.start()          # first run starts the trial automatically
+if not status:
+    print(status.message)      # expired / tampered / wrong machine…</code></pre>
+    <a href="integration.html">Full integration guide →</a>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Honest about the threat model</h2>
+    <div class="note warn">Local licensing is tamper-<strong>evident</strong>, not tamper-proof. A determined reverse engineer with a debugger wins eventually — that is true of every offline scheme. py-Rizmi raises the bar against casual-to-moderate piracy, which is where the real volume is, and tells you exactly what it can and cannot stop. For stronger guarantees, pair it with online activation in a future phase.</div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="container">py-Rizmi Licensing · MIT · built by <a href="https://github.com/Ramzi-Hadrouk">@Ramzi-Hadrouk</a> · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi/issues">Issues</a></div>
+</footer>
+</body>
+</html>

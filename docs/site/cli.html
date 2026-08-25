@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLI Reference — py-Rizmi</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<script src="assets/header.js"></script>
+
+<section class="hero" style="border-top:none;padding-bottom:30px;">
+  <div class="container"><h1>CLI Reference</h1>
+  <p class="sub">Every command supports <code>--help</code> and <code>--json</code>-style machine output where shown.</p></div>
+</section>
+
+<section><div class="container">
+
+  <h2>rizmi init</h2>
+  <table class="doc">
+    <tr><th style="width:55%"><code>rizmi init &lt;App&gt; --out ./licensing</code></th><td>Generate a keypair and print a paste-ready <code>LicenseGate</code> snippet with the fingerprint pre-filled.</td></tr>
+    <tr><td><code>--key-size 2048|3072|4096</code></td><td>RSA key size (default 2048).</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">rizmi keys</h2>
+  <table class="doc">
+    <tr><th><code>rizmi keys generate --private-out k.pem --public-out p.pem [--passphrase]</code></th><td>Generate an RSA keypair; private key written with 0600 permissions.</td></tr>
+    <tr><td><code>rizmi keys inspect &lt;key.pem&gt;</code></td><td>Show type, size, DER fingerprint.</td></tr>
+    <tr><td><code>rizmi keys verify --private k.pem --public p.pem</code></td><td>Check the pair matches.</td></tr>
+    <tr><td><code>rizmi keys fingerprint --public p.pem</code></td><td>SHA-256 of the PEM for pinning with <code>pin_fingerprint()</code>.</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">rizmi license</h2>
+  <table class="doc">
+    <tr><th><code>rizmi license issue -k priv.pem -o out.lic --client "Acme" --license-id deploy-001 --hwid &lt;hash&gt;</code></th><td>Sign and write a <code>.lic</code> JWT. Also: <code>--features f1 --features f2</code>, <code>--max-clients</code>, <code>--grace-days</code>, <code>--exp-days</code>, <code>--from-json spec.json</code>.</td></tr>
+    <tr><td><code>rizmi license validate file.lic --public-key pub.pem</code></td><td>Full validation (signature, expiry+grace, HWID) on this machine. <code>--json</code> available.</td></tr>
+    <tr><td><code>rizmi license inspect file.lic --public-key pub.pem</code></td><td>Decode and display all payload fields without HWID/expiry enforcement.</td></tr>
+    <tr><td><code>rizmi license revoke --license-id id1 --license-id id2 …</code></td><td>Build and sign a revocation list (CRL).</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">rizmi app</h2>
+  <table class="doc">
+    <tr><th><code>rizmi app status --app-name MyApp [--db path] [--json]</code></th><td>Show the installation's licensing state. Point <code>--db</code> at a copied-off client DB for remote debugging.</td></tr>
+    <tr><td><code>rizmi app activate -a MyApp -P pub.pem (--token - | --file lic.lic)</code></td><td>Validate against the public key, then store. <code>--token -</code> reads stdin so licenses stay out of shell history; <code>--machine-id</code> targets foreign DBs.</td></tr>
+    <tr><td><code>rizmi app deactivate -a MyApp [--db path] --confirm</code></td><td>Archive the active license (history kept). Requires <code>--confirm</code>.</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">rizmi trial</h2>
+  <table class="doc">
+    <tr><th><code>rizmi trial status --config-dir DIR --public-key pub.pem [--json]</code></th><td>Trial state: <code>licensed · trial_active · trial_expired · tampered · licensed_invalid</code>. SQLite-aware.</td></tr>
+    <tr><td><code>rizmi trial reset --config-dir DIR --confirm</code></td><td>Developer diagnostics only — resets local trial state.</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">rizmi doctor</h2>
+  <table class="doc">
+    <tr><th><code>rizmi doctor run -a MyApp [--db path] [-P pub.pem] [--fingerprint hex] [--json] [--strict]</code></th><td>Health checklist: machine ID readable · clock sane · DB openable · row integrity · license state · key pin. Exit nonzero on failure with <code>--strict</code>; a pinned-fingerprint mismatch is always an error.</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">rizmi machine-id / gui</h2>
+  <table class="doc">
+    <tr><th><code>rizmi machine-id [--raw|--copy|--json]</code></th><td>This machine's SHA-256 hardware fingerprint (what you bind licenses to).</td></tr>
+    <tr><td><code>rizmi gui</code></td><td>PyQt6 desktop toolkit (keys, issue, viewer, revocation). Needs <code>pip install py-rizmi[gui]</code>.</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">rizmi migrate-to-sqlite</h2>
+  <table class="doc">
+    <tr><th><code>rizmi migrate-to-sqlite run -c cfg_dir -a MyApp [--db path]</code></th><td>Import file-era trial key material into the SQLite store. Idempotent.</td></tr>
+  </table>
+
+  <div class="note warn" style="margin-top:26px;"><b>Removed in v2.0:</b> the swap/replacement-authorization commands (<code>create-swap-request</code>, <code>sign-swap</code>, <code>verify-swap</code>) were removed — use reissue + revocation instead.</div>
+</div></section>
+
+<footer class="site"><div class="container">py-Rizmi Licensing · MIT · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">GitHub</a></div></footer>
+</body>
+</html>

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-08-25
+
+### Added
+- **Developer-Experience Layer**: `LicenseGate` — a one-object facade over StateStore + LicenseActivator + TrialManager (+ optional keypin & watchdog). `gate.start()` / `gate.check()` / `gate.activate_token()` / `gate.activate_file()` / `status_summary()` reduce typical integration to ~3 lines.
+- **`LicenseStatus`**: rich, bool-friendly result type (`state`, `days_left`, `client`, `message`, `to_dict()`) shared across the gate, activator and CLI.
+- **`rizmi doctor run`**: one-command health checklist — machine ID readable, clock sane, DB openable, row HMAC integrity, license/trial state, key-pin verification. `--json` and `--strict`; a pinned-fingerprint mismatch is always an error.
+- **`rizmi app status / activate / deactivate`**: inspect and manage an installation's licensing from the terminal. `activate` validates against the vendor public key before storing; supports `--machine-id` for foreign DBs and `--token -` (stdin) to keep licenses out of shell history.
+- **`rizmi init <App>`**: scaffolder that generates a keypair and prints a paste-ready `LicenseGate` snippet with the fingerprint pre-filled.
+- **`rizmi migrate-to-sqlite run`**: idempotent CLI wrapper around `migrate_legacy_state()`.
+- **Example recipes**: `examples/simple_cli_app.py`, `examples/tkinter_activation_dialog.py`, `examples/fastapi_dependency.py` (compile-checked in CI).
+- **Documentation site**: static site under `docs/site/` deployed via GitHub Pages (`docs.yml` workflow) — features, quick start, full CLI reference, integration guide, packaging guidance, troubleshooting playbook, vision & roadmap.
+
+### Fixed
+- License precedence hardening: an active-but-tampered license row now reports `licensed_invalid` through `LicenseGate.check()` instead of silently falling back to an active trial (`StateStore.active_license_unverified()` distinguishes "no license" from "license present but tampered").
+
 ## [2.0.0] - 2026-08-25
 
 ### Added

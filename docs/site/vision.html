@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision &amp; Roadmap — py-Rizmi</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<script src="assets/header.js"></script>
+
+<section class="hero" style="border-top:none;padding-bottom:30px;">
+  <div class="container"><h1>Vision &amp; Roadmap</h1>
+  <p class="sub">Why py-rizmi exists, where it's going, and the principles that keep it trustworthy.</p></div>
+</section>
+
+<section><div class="container">
+  <h2>The vision</h2>
+  <p class="lead">Independent Python developers shouldn't need to run a licensing SaaS — or write crypto themselves — to get paid for their work. py-Rizmi is building the licensing layer we wished existed: <b>offline-first, cryptographically honest, five-minute integration, zero accounts</b>. One <code>pip install</code>, one command to scaffold, three lines to integrate, one command to debug any customer install anywhere in the world.</p>
+
+  <h2 style="margin-top:34px;">Principles</h2>
+  <div class="grid">
+    <div class="card"><h3>Honesty over marketing</h3><p>We document exactly what local licensing stops and what it doesn't. No "unhackable" claims — trust is the product.</p></div>
+    <div class="card"><h3>Offline-first</h3><p>No phone-home, no account servers, no telemetry. If your customers are air-gapped, py-rizmi still works.</p></div>
+    <div class="card"><h3>Detect, don't pretend</h3><p>Local storage can't be made unwritable — so every byte is verified against machine-bound HMACs and signatures, and edits are caught loudly instead of silently trusted.</p></div>
+    <div class="card"><h3>DX is security UX</h3><p>Most "cracks" happen because devs wire validation wrong. The gate facade, scaffolder and doctor exist so the correct path is also the easy path.</p></div>
+    <div class="card"><h3>Fail safe, fail loud</h3><p>Tampered licenses never fall back to trials. Unverifiable revocation lists are rejected, not ignored. Errors carry canonical codes your UI can render.</p></div>
+    <div class="card"><h3>Zero-dependency core</h3><p>State lives in stdlib SQLite; no cloud SDKs, no vendor lock-in, no phoning home. Your customers' machines stay yours.</p></div>
+  </div>
+
+  <h2 style="margin-top:40px;">Shipped</h2>
+  <table class="doc">
+    <tr><th>Release</th><th>Highlights</th></tr>
+    <tr><td><b>v1.x</b></td><td>RSA-signed JWT licenses, HWID binding, clock-tamper guard, trials, revocation lists, watchdog, PyQt6 toolkit, Typer CLI.</td></tr>
+    <tr><td><b>v2.0</b></td><td>Per-app tamper-evident SQLite store; in-app activation (paste/file); public-key pinning self-check; multi-app namespacing; frozen-build e2e tests; swap feature removed for clarity.</td></tr>
+    <tr><td><b>v2.1</b></td><td><code>LicenseGate</code> facade + <code>LicenseStatus</code>; <code>rizmi init</code> scaffolder; <code>rizmi doctor</code>; <code>rizmi app</code> management; <code>migrate-to-sqlite</code>; example recipes (CLI/Tkinter/FastAPI); this documentation site.</td></tr>
+  </table>
+
+  <h2 style="margin-top:34px;">Roadmap</h2>
+  <table class="doc">
+    <tr><th>Near term</th><th>Later</th></tr>
+    <tr><td>Online activation server reference implementation (optional tier — instant revocation, server-signed time)</td><td>TPM / secure-enclave binding for high-value deployments</td></tr>
+    <tr><td>Floating/concurrent-seat enforcement helpers (<code>max_clients</code> end-to-end)</td><td>License reseller workflow (bulk issue + per-reseller reporting)</td></tr>
+    <tr><td>Feature-flag gating API (<code>status.has_feature("pro")</code>)</td><td>GUI wizard for end-user activation you can embed</td></tr>
+    <tr><td>More community recipes (Django, Kivy, PySide)</td><td>Plugin ecosystem around the gate interface</td></tr>
+  </table>
+
+  <h2 style="margin-top:34px;">Join in</h2>
+  <p>py-Rizmi is MIT-licensed and built in the open. Star the repo, open issues with your integration pain points, and contribute recipes — the roadmap is steered by what integrators actually hit. <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">github.com/Ramzi-Hadrouk/py-rizmi</a></p>
+</div></section>
+
+<footer class="site"><div class="container">py-Rizmi Licensing · MIT · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">GitHub</a></div></footer>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick Start — py-Rizmi</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<script src="assets/header.js"></script>
+
+<section class="hero" style="border-top:none;padding-bottom:30px;">
+  <div class="container"><h1>Quick Start</h1>
+  <p class="sub">From zero to a licensed Python app in about five minutes.</p></div>
+</section>
+
+<section><div class="container">
+  <h2>1 · Install</h2>
+<pre><code>pip install py-rizmi          # core (validation + issuance + CLI)
+pip install py-rizmi[gui]     # optional PyQt6 desktop toolkit</code></pre>
+
+  <h2 style="margin-top:34px;">2 · Scaffold your product</h2>
+<pre><code>rizmi init MyApp --out ./licensing</code></pre>
+  <p>This generates <span class="inline-code"><code>private_key.pem</code></span> + <span class="inline-code"><code>public_key.pem</code></span>, prints the public key's SHA-256 fingerprint, and emits a paste-ready <code>LicenseGate</code> snippet with everything filled in.</p>
+  <div class="note">Keep <b>private_key.pem</b> on your issuing machine. Only the public key ever ships inside your app.</div>
+
+  <h2 style="margin-top:34px;">3 · Paste the snippet into your app</h2>
+<pre><code>from py_rizmi import LicenseGate, pin_fingerprint
+
+VENDOR_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
+...from rizmi init...
+-----END PUBLIC KEY-----"""
+VENDOR_KEY_FINGERPRINT = "abc123..."   # from rizmi init
+
+pin_fingerprint(VENDOR_PUBLIC_KEY, VENDOR_KEY_FINGERPRINT)  # startup gate
+
+gate = LicenseGate(
+    app_name="MyApp",
+    public_key=VENDOR_PUBLIC_KEY,
+    expected_fingerprint=VENDOR_KEY_FINGERPRINT,
+    config_dir="~/.config/MyApp",
+)
+
+status = gate.start()   # first run starts a 14-day trial automatically
+if not status:
+    print(status.message)
+    raise SystemExit(1)</code></pre>
+
+  <h2 style="margin-top:34px;">4 · Issue a license for a customer's machine</h2>
+<pre><code># on the customer machine:
+rizmi machine-id --raw
+# → fb50b7767d233a9e… (they send you this hash)
+
+# on your machine:
+rizmi license issue \
+  --private-key licensing/private_key.pem \
+  --client "Acme Corp" --license-id deploy-001 \
+  --hwid &lt;their-hash&gt; --exp-days 365 -o acme.lic</code></pre>
+
+  <h2 style="margin-top:34px;">5 · Customer activates in your app</h2>
+  <p>Either paste the token into your UI:</p>
+<pre><code>result = gate.activate_token(pasted_text)
+if result.ok:
+    print(f"Licensed to {result.payload.client}")</code></pre>
+  <p>…or pick the file:</p>
+<pre><code>result = gate.activate_file("acme.lic")</code></pre>
+  <p>Both run the full validation chain (signature → expiry → HWID → revocation → clock) <em>before</em> anything is stored. Invalid licenses are never written.</p>
+
+  <h2 style="margin-top:34px;">6 · Compile and ship</h2>
+<pre><code>nuitka --standalone --onefile --include-package=py_rizmi main.py</code></pre>
+  <p>See <a href="packaging.html">Packaging</a> for Nuitka/PyInstaller specifics.</p>
+
+  <h2 style="margin-top:34px;">When something breaks</h2>
+<pre><code>rizmi doctor --app-name MyApp</code></pre>
+  <p>prints a ✓/✗ checklist of every subsystem. Ask customers to run it and send the output — see <a href="troubleshooting.html">Troubleshooting</a>.</p>
+</div></section>
+
+<footer class="site"><div class="container">py-Rizmi Licensing · MIT · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">GitHub</a></div></footer>
+</body>
+</html>

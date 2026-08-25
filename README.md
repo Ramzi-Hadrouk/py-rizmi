@@ -26,6 +26,10 @@ py-Rizmi is an offline-first licensing toolkit that helps developers protect and
 hardware-bound activation, and secure local validation, while remaining flexible for future online licensing workflows.
 </p>
 
+<p align="center">
+  📚 <a href="https://ramzi-hadrouk.github.io/py-rizmi/"><b>Documentation site</b></a> · Quick Start · CLI reference · Integration guide · Packaging · Troubleshooting · Vision
+</p>
+
 ---
 
 ## Table of Contents
@@ -278,10 +282,10 @@ Distribute the resulting JSON to your apps and load it with
 `LicenseValidator(public_key, revocation_list=...)` — any license whose
 ID is on the list fails validation with `revoked`.
 
-### SQLite State Store & In-App License Activation (v2)
+### SQLite State Store & In-App License Activation (v2.1)
 
 Instead of scattering `license.lic` / `trial_key.pem` / clock-state
-files across the user's disk, py-rizmi can keep **all state in one
+files across the user's disk, py-rizmi keeps **all state in one
 tamper-evident SQLite database** (per-app, in the OS user-data dir):
 
 - every row is HMAC-verified against a machine+app-bound key before use —
@@ -291,55 +295,52 @@ tamper-evident SQLite database** (per-app, in the OS user-data dir):
 - each app passes its own `app_name`, so multiple py-rizmi apps on one
   machine cannot read or overwrite each other's state.
 
-```bash
-rizmi keys fingerprint --public keys/public_key.pem   # paste into your source
-```
+**The 5-minute path** — run `rizmi init MyApp`; it generates keys,
+prints the fingerprint, and hands you this snippet ready to paste:
 
 ```python
-from py_rizmi import (
-    RizmiConfig, LicenseActivator, LicenseWatchdog, StateStore,
-    TrialManager, key_fingerprint, pin_fingerprint,
+from py_rizmi import LicenseGate, pin_fingerprint
+
+pin_fingerprint(VENDOR_PUBLIC_KEY, VENDOR_KEY_FINGERPRINT)  # startup gate
+
+gate = LicenseGate(
+    app_name="MyApp",
+    public_key=VENDOR_PUBLIC_KEY,
+    expected_fingerprint=VENDOR_KEY_FINGERPRINT,
+    config_dir="~/.config/MyApp",
+    enable_watchdog=True,
+    on_violation=lambda reason, detail: shutdown(),
 )
 
-VENDOR_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
-...your embedded public key...
------END PUBLIC KEY-----"""
-VENDOR_KEY_FINGERPRINT = "sha256-hex-from-rizmi-keys-fingerprint"
+status = gate.start()      # first run starts the trial automatically
+if not status:
+    print(status.message)  # expired / tampered / wrong machine...
+```
 
-# Startup gate: refuse to run if either constant was patched.
-pin_fingerprint(VENDOR_PUBLIC_KEY, VENDOR_KEY_FINGERPRINT)
+**In-app license entry** (your UI hosts it; py-rizmi validates):
 
-config = RizmiConfig(use_sqlite=True, app_name="MyProduct")
-store = StateStore(config.db_path or StateStore.default_path("MyProduct"),
-                   machine_id=MachineFingerprint.get_machine_id(),
-                   app_name="MyProduct")
-activator = LicenseActivator(store, VENDOR_PUBLIC_KEY)
-
-# ── In-app license entry (developer-hosted UI) ──────────────────────
-# Method A — user pastes the license token into your text field:
-result = activator.activate_token(pasted_text.strip())
-# Method B — user picks their license.lic file:
-result = activator.activate_file(chosen_path)
+```python
+result = gate.activate_token(pasted_text.strip())   # Method A: paste
+# or
+result = gate.activate_file(chosen_path)            # Method B: pick .lic
 
 if result.ok:
-    print(f"Licensed to {result.payload.client}")   # accepted
+    print(f"Licensed to {result.payload.client}")
 else:
-    show_error(result.reason)   # 'tampered', 'hwid_mismatch', 'expired', ...
+    show(result.message)   # 'tampered', 'hwid_mismatch', 'expired', ...
 ```
 
 Activation runs the **full validation chain** (signature → expiry → HWID →
 revocation → clock guard) *before* anything is stored; only valid licenses
-are accepted. `activator.current()` re-validates on every read.
+are accepted. A tampered license never falls back to an active trial.
+`gate.check()` / `gate.status_summary()` re-validate for UIs and logs.
 
-Trials work in SQLite mode too:
+Support & debugging from any terminal:
 
-```python
-trial = TrialManager(
-    config_dir="path/to/app-config", trial_days=14,
-    public_key=VENDOR_PUBLIC_KEY,
-    use_sqlite=True, db_path=store.db_path, app_name="MyProduct",
-)
-status = trial.start_or_check()
+```bash
+rizmi doctor run --app-name MyApp            # ✓/✗ health checklist
+rizmi app status --app-name MyApp --json     # installation state
+rizmi migrate-to-sqlite run -c cfg -a MyApp  # upgrade old installs
 ```
 
 > **Packaged apps (Nuitka / PyInstaller):** works unchanged. Paths never

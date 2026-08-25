@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Troubleshooting — py-Rizmi</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<script src="assets/header.js"></script>
+
+<section class="hero" style="border-top:none;padding-bottom:30px;">
+  <div class="container"><h1>Troubleshooting</h1>
+  <p class="sub">Start with <code>rizmi doctor run -a &lt;App&gt;</code> — it answers most tickets in one shot.</p></div>
+</section>
+
+<section><div class="container">
+  <h2>Support workflow that actually works</h2>
+<pre><code># customer machine:
+rizmi doctor run --app-name MyApp --json > doctor.json
+rizmi app status --app-name MyApp --db "$(rizmi doctor path 2>/dev/null)" # or default location
+
+# send both files to support.</code></pre>
+
+  <h2 style="margin-top:30px;">Symptoms → causes → fixes</h2>
+  <table class="doc">
+    <tr><th>Symptom / code</th><th>Cause</th><th>Fix</th></tr>
+    <tr><td><code>missing</code></td><td>No license activated yet and trial data absent.</td><td>Normal on first contact — the app should have started a trial; if not, check DB permissions at the platformdirs path shown by <code>doctor</code>.</td></tr>
+    <tr><td><code>expired</code></td><td>Past exp + grace days.</td><td>Issue a new license: <code>rizmi license issue …</code>, then activate in-app or via CLI.</td></tr>
+    <tr><td><code>hwid_mismatch</code></td><td>License bound to another machine (OS reinstall also changes the ID).</td><td>Get the new <code>rizmi machine-id --raw</code> and re-issue.</td></tr>
+    <tr><td><code>tampered</code></td><td>A row/file failed its HMAC or the JWT signature broke.</td><td>Re-activate from the original .lic file. If it recurs, the disk may be corrupt — run <code>doctor --strict</code>.</td></tr>
+    <tr><td><code>clock_tampering</code></td><td>Clock rolled back past the last observed time.</td><td>Correct the system clock (NTP). The ratchet only moves forward.</td></tr>
+    <tr><td><code>revoked</code></td><td>License ID on your published CRL.</td><td>Remove the ID and publish a fresh list, or re-issue under a new ID.</td></tr>
+    <tr><td><code>decode_error</code></td><td>Public key doesn't match the issuing private key.</td><td>Verify with <code>rizmi keys verify</code>; re-embed the right public key.</td></tr>
+    <tr><td><code>licensed_invalid</code></td><td>A license exists but fails validation (tamper/expiry).</td><td>Deliberate behavior: apps never fall back to an active trial once a real license was seen. Deactivate then re-activate a good license.</td></tr>
+    <tr><td>Doctor: machine-id ✗</td><td>Container/VM without OS machine ID.</td><td>py-rizmi can't bind HWID here; provide a custom <code>FingerprintProvider</code>.</td></tr>
+    <tr><td>Doctor: integrity ✗ (state rows)</td><td>DB edited outside the app, or copied between machines/apps.</td><td>Rows are quarantined automatically. Restore from backup or deactivate/re-activate.</td></tr>
+    <tr><td>KeyPinError at startup</td><td>Embedded key constant and fingerprint disagree — build tampered or developer updated one side only.</td><td>Regenerate fingerprint via <code>rizmi keys fingerprint</code> and rebuild both constants together.</td></tr>
+    <tr><td>Windows: DB "database is locked"</td><td>Two processes / AV scanner holding the file.</td><td>Connections are short-lived by design; exclude state.db from AV real-time scanning if persistent.</td></tr>
+  </table>
+
+  <h2 style="margin-top:30px;">Collecting a support bundle</h2>
+<pre><code>rizmi doctor run -a MyApp -P pub.pem --fingerprint FP --json > doctor.json
+rizmi app status -a MyApp --json > status.json   # add --db for non-default paths</code></pre>
+  <p>Both files contain no secrets: the public key is public, tokens are hardware-bound, and HMAC values are useless off-machine.</p>
+</div></section>
+
+<footer class="site"><div class="container">py-Rizmi Licensing · MIT · <a href="https://github.com/Ramzi-Hadrouk/py-rizmi">GitHub</a></div></footer>
+</body>
+</html>
