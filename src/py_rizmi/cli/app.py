@@ -30,6 +30,7 @@ from py_rizmi.cli.commands.license_cmd import app as license_app
 from py_rizmi.cli.commands.machine_id import app as machine_id_app
 from py_rizmi.cli.commands.trial_cmd import app as trial_app
 from py_rizmi.cli.commands.app_cmd import app as app_status_app
+from py_rizmi.cli.commands.doctor import app as doctor_app
 
 console = Console()
 err_console = Console(stderr=True)
@@ -51,6 +52,7 @@ app.add_typer(license_app,    name="license",    help="License file issuance, va
 app.add_typer(machine_id_app, name="machine-id", help="Get this machine's hardware fingerprint (HWID).")
 app.add_typer(trial_app, name="trial", help="License-free trial period status and management.")
 app.add_typer(app_status_app, name="app", help="Inspect and manage an installation's licensing.")
+app.add_typer(doctor_app, name="doctor", help="Diagnose an installation's licensing health.")
 
 
 
