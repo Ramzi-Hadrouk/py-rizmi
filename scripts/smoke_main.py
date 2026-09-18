@@ -1,10 +1,10 @@
-"""Frozen-build smoke entry point.
+"""Subprocess smoke entry point for the licensing flow.
 
-Compiled with Nuitka/PyInstaller by tests/e2e/test_frozen_smoke.py.
-Exercises StateStore + TrialManager(use_sqlite=True) inside a real
-binary. Exit 0 = flow OK; exit 3 = tamper detection failed; exit 4 =
-unexpected error. With SMOKE_TAMPER=1 the DB is corrupted first and a
-nonzero exit is EXPECTED (detection works).
+Run as a real subprocess by tests/e2e/test_smoke_script.py.
+Exercises StateStore + TrialManager(use_sqlite=True) end to end.
+Exit 0 = flow OK; exit 3 = tamper detected (expected under test);
+exit 4 = unexpected error. With SMOKE_TAMPER=1 the DB is corrupted
+first and a nonzero exit is EXPECTED (detection works).
 """
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-from py_rizmi._internal.env import is_frozen, packager
 from py_rizmi.core.keypin import key_fingerprint, pin_fingerprint
 from py_rizmi.core.state_store import StateStoreError
 from py_rizmi.core.trial import TrialManager
@@ -29,7 +28,6 @@ def _make_keypair(tmp: Path) -> str:
 
 
 def main() -> int:
-    print(f"frozen={is_frozen()} packager={packager()}")
     tmp = Path(tempfile.mkdtemp(prefix="rizmi-smoke-"))
     pub_pem = _make_keypair(tmp)
 
@@ -82,10 +80,6 @@ def main() -> int:
         # distinct exit code for the tamper-detection scenario so the
         # e2e test can tell "detected" apart from a plain clean run
         return 3
-
-    if not is_frozen():
-        # running under plain python is fine too — just report it
-        print("(not frozen; informational)")
 
     print("SMOKE OK")
     return 0
