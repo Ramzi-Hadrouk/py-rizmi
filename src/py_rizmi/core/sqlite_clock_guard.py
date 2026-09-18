@@ -60,8 +60,15 @@ class SqliteClockGuard(ClockGuard):
             )
         self.fallback_file = Path(fallback_file) if fallback_file else None
         self.db_path = self._store.db_path
-        super().__init__([_SENTINEL_PATH], machine_id=machine_id,
-                         tolerance_seconds=tolerance_seconds)
+        # Persistence redundancy here is DB + fallback file (+ shared DB),
+        # which the file-based parent can't see — so silence its
+        # file-path-count warning for the internal sentinel path.
+        super().__init__(
+            [_SENTINEL_PATH],
+            machine_id=machine_id,
+            tolerance_seconds=tolerance_seconds,
+            suppress_redundancy_warning=True,
+        )
         # parent stored [sentinel]; replace with our single logical path list
         self.state_paths = []
 

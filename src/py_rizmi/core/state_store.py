@@ -22,9 +22,10 @@ import json
 import logging
 import sqlite3
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 logger = logging.getLogger("license")
 
@@ -137,14 +138,32 @@ class StateStore:
         return Path(dir_a) / "state.db"
 
     def _connect(self) -> sqlite3.Connection:
+        """Open a raw connection. Prefer :meth:`_session`, which always
+        closes the connection — an unclosed handle blocks file deletion
+        on Windows (WinError 32) and leaks file descriptors."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self.db_path)
         conn.execute("PRAGMA journal_mode=DELETE")
         conn.execute("PRAGMA synchronous=FULL")
         return conn
 
+    @contextmanager
+    def _session(self) -> Iterator[sqlite3.Connection]:
+        """Transactional session that ALWAYS closes the connection.
+
+        ``with conn:`` in sqlite3 only manages the transaction — it never
+        closes. Relying on GC kept handles open past method return, which
+        on Windows made the DB file undeletable in tests and CI.
+        """
+        conn = self._connect()
+        try:
+            with conn:  # transaction scope: commit / rollback
+                yield conn
+        finally:
+            conn.close()
+
     def _ensure_schema(self) -> None:
-        with self._connect() as conn:
+        with self._session() as conn:
             conn.executescript(_SCHEMA)
             row = conn.execute(
                 "SELECT value FROM store_meta WHERE key='schema_version'"
@@ -182,7 +201,7 @@ class StateStore:
     def put(self, role: str, payload: Dict[str, Any]) -> None:
         blob = self._canonical(payload)
         mac = self._mac("state", role, blob)
-        with self._connect() as conn:
+        with self._session() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO state(role, payload, hmac, updated_at) "
                 "VALUES (?, ?, ?, ?)",
@@ -198,7 +217,7 @@ class StateStore:
         """Return (payload, verified). verified=False covers both a
         missing role (payload None) and a present-but-tampered role."""
         try:
-            with self._connect() as conn:
+            with self._session() as conn:
                 row = conn.execute(
                     "SELECT payload, hmac FROM state WHERE role = ?", [role]
                 ).fetchone()
@@ -221,13 +240,13 @@ class StateStore:
         return result, True
 
     def delete(self, role: str) -> None:
-        with self._connect() as conn:
+        with self._session() as conn:
             conn.execute("DELETE FROM state WHERE role = ?", [role])
 
     # ── meta ──────────────────────────────────────────────────────────
 
     def put_meta(self, key: str, value: str) -> None:
-        with self._connect() as conn:
+        with self._session() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO store_meta(key, value) VALUES (?, ?)",
                 [key, value],
@@ -235,7 +254,7 @@ class StateStore:
 
     def get_meta(self, key: str) -> Optional[str]:
         try:
-            with self._connect() as conn:
+            with self._session() as conn:
                 row = conn.execute(
                     "SELECT value FROM store_meta WHERE key = ?", [key]
                 ).fetchone()
@@ -248,7 +267,7 @@ class StateStore:
     def put_key(self, role: str, pem: str) -> None:
         blob = pem.encode("utf-8")
         mac = self._mac("keys", role, blob)
-        with self._connect() as conn:
+        with self._session() as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO keys(role, pem, hmac, updated_at) "
                 "VALUES (?, ?, ?, ?)",
@@ -256,7 +275,7 @@ class StateStore:
             )
 
     def get_key(self, role: str) -> Optional[str]:
-        with self._connect() as conn:
+        with self._session() as conn:
             row = conn.execute(
                 "SELECT pem, hmac FROM keys WHERE role = ?", [role]
             ).fetchone()
@@ -276,7 +295,7 @@ class StateStore:
         blob = token.encode("utf-8")
         mac = self._mac("licenses", license_id, blob)
         now = int(time.time())
-        with self._connect() as conn:
+        with self._session() as conn:
             # single active slot: demote any previous holder atomically
             conn.execute("UPDATE licenses SET slot='archived' WHERE slot='active'")
             conn.execute(
@@ -288,7 +307,7 @@ class StateStore:
         return StoredLicense(license_id=license_id, token=token, activated_at=now)
 
     def get_license(self, license_id: str) -> Optional[str]:
-        with self._connect() as conn:
+        with self._session() as conn:
             row = conn.execute(
                 "SELECT token, hmac FROM licenses WHERE license_id = ?", [license_id]
             ).fetchone()
@@ -317,7 +336,7 @@ class StateStore:
         return self._read_active(verify=False)
 
     def _read_active(self, *, verify: bool) -> Optional[StoredLicense]:
-        with self._connect() as conn:
+        with self._session() as conn:
             row = conn.execute(
                 "SELECT license_id, token, hmac, activated_at FROM licenses "
                 "WHERE slot='active'"
@@ -342,7 +361,7 @@ class StateStore:
 
     def verify(self) -> StoreIntegrityReport:
         tampered: List[str] = []
-        with self._connect() as conn:
+        with self._session() as conn:
             for role, payload_text, expected in conn.execute(
                 "SELECT role, payload, hmac FROM state"
             ):

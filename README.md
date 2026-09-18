@@ -43,7 +43,6 @@ hardware-bound activation, and secure local validation, while remaining flexible
 7. [Integration Workflow](#integration-workflow--from-start-to-finish)
 8. [Developer Integration Guide](docs/integration-guide.md)
 9. [Testing](#testing)
-9. [Building an Executable](#building-an-executable)
 10. [Project Structure](#project-structure)
 11. [Contributing](#contributing)
 12. [License](#license)
@@ -343,10 +342,9 @@ rizmi app status --app-name MyApp --json     # installation state
 rizmi migrate-to-sqlite run -c cfg -a MyApp  # upgrade old installs
 ```
 
-> **Packaged apps (Nuitka / PyInstaller):** works unchanged. Paths never
-> derive from `__file__`; prefer Nuitka (`--include-package=py_rizmi`) —
-> compiled constants resist public-key patching far better than archive-
-> based packagers.
+> **Packaged apps (PyInstaller & friends):** works unchanged. Paths never
+> derive from `__file__`; writable state always resolves to the platformdirs
+> user-data location, and compiled constants resist public-key patching.
 >
 > **Honest threat model:** local storage is tamper-*evident*, not
 > tamper-proof. A determined reverse engineer with a debugger wins; this
@@ -720,56 +718,12 @@ All core tests cover the public API without any GUI dependencies.
 
 ---
 
-## Building an Executable
-
-This project uses [Nuitka](https://nuitka.net) to compile the Python code
-into a standalone native executable for Linux or Windows.
-
-### Prerequisites
-
-```bash
-# Nuitka is a dev dependency
-uv sync --extra dev
-
-# Linux: gcc / g++ must be installed
-sudo apt install gcc g++ python3-dev  # Debian / Ubuntu
-
-# Windows: Download and install MSVC from Visual Studio Build Tools
-```
-
-### Build
-
-```bash
-# Standalone folder (recommended — faster build, easier debugging)
-bash build.sh standalone
-
-# Single executable (longer build, larger file)
-bash build.sh onefile
-```
-
-Output goes to `dist/py-rizmi/`.
-
-> **Cross-platform note:** Build on each target OS separately.
-> Linux builds produce Linux binaries, Windows builds produce `.exe`.
-> Use GitHub Actions with matrix runners (ubuntu, windows) to automate this.
-
-### What Gets Bundled
-
-| Resource | How | Why |
-|----------|-----|-----|
-| `media/logo.png` | `--include-data-dir` | Window icon & in-app logo |
-| `README.md` | `--include-data-file` | Integration Guide view |
-| PyQt6, qdarktheme, markdown, PyJWT, cryptography | Auto-detected by Nuitka | Runtime dependencies |
-
----
-
 ## Project Structure
 
 ```
 py-rizmi/
 ├── main.py                          # GUI entry point
 ├── pyproject.toml                   # Hatchling + hatch-vcs build config
-├── build.sh                         # Nuitka build script
 ├── CHANGELOG.md                     # Keep-a-Changelog
 ├── CONTRIBUTING.md                  # Development guide
 ├── docs/

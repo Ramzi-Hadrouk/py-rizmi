@@ -135,6 +135,8 @@ class ClockGuard:
         state_paths: Union[str, Path, Sequence[Union[str, Path]]],
         machine_id: str,
         tolerance_seconds: int = 300,
+        *,
+        suppress_redundancy_warning: bool = False,
     ):
         if isinstance(state_paths, (str, Path)):
             state_paths = [state_paths]
@@ -143,7 +145,10 @@ class ClockGuard:
         self.tolerance_seconds = tolerance_seconds
         self._key = _derive_key(machine_id)
 
-        if len(self.state_paths) < _RECOMMENDED_MIN_PATHS:
+        if (
+            len(self.state_paths) < _RECOMMENDED_MIN_PATHS
+            and not suppress_redundancy_warning
+        ):
             logger.warning(
                 "Clock guard configured with only %d state path(s); redundancy "
                 "means a single deleted/corrupted copy can't disable protection "

@@ -97,9 +97,9 @@ if result.ok:
 <pre><code>result = gate.activate_file("acme.lic")</code></pre>
   <p>Both run the full validation chain (signature → expiry → HWID → revocation → clock) <em>before</em> anything is stored. Invalid licenses are never written.</p>
 
-  <h2 style="margin-top:34px;">6 · Compile and ship</h2>
-<pre><code>nuitka --standalone --onefile --include-package=py_rizmi main.py</code></pre>
-  <p>See <a href="packaging.html">Packaging</a> for Nuitka/PyInstaller specifics.</p>
+  <h2 style="margin-top:34px;">6 · Package and ship</h2>
+<pre><code>pyinstaller --onefile main.py</code></pre>
+  <p>See <a href="packaging.html">Packaging</a> for packaged-app specifics (state paths, what gets embedded).</p>
 
   <h2 style="margin-top:34px;">When something breaks</h2>
 <pre><code>rizmi doctor --app-name MyApp</code></pre>

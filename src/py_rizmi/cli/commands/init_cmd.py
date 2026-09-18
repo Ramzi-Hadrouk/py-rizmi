@@ -78,7 +78,7 @@ def init_run(
         f"[green]✓ Keys written:[/] {priv_path} , {pub_path}\n\n"
         f"Next steps:\n"
         f"  1. Paste the snippet below into your app source.\n"
-        f"  2. Compile (Nuitka keeps constants safe).\n"
+        f"  2. Distribute as you normally do (compiled builds keep constants safe).\n"
         f"  3. Issue licenses: rizmi license issue --private-key {priv_path} ...\n"
         f"  4. Health-check any install: rizmi doctor --app-name {app_name}",
         title=f"py-rizmi ready for '{app_name}'",

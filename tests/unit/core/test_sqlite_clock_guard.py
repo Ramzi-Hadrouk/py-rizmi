@@ -1,15 +1,36 @@
 """Tests for the SQLite-backed ClockGuard adapter."""
 from __future__ import annotations
 
+import gc
 import json
 import sqlite3
 import time
 from pathlib import Path
+from typing import Union
 
 import pytest
 
 from py_rizmi.core.clock_guard import REASON, ClockGuard
 from py_rizmi.core.sqlite_clock_guard import SqliteClockGuard
+
+
+def _unlink_db(path: Union[str, Path], attempts: int = 5) -> None:
+    """Delete a SQLite file, tolerating transient Windows file locks.
+
+    Any lingering handle (e.g. from a third-party codec or AV scanner)
+    blocks deletion on Windows with WinError 32; a short retry loop with
+    a GC pass gives such handles time to be released.
+    """
+    p = Path(path)
+    for attempt in range(attempts):
+        try:
+            p.unlink()
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            gc.collect()
+            time.sleep(0.1 * (attempt + 1))
 
 
 @pytest.fixture()
@@ -62,7 +83,7 @@ def test_tampered_db_row_classified(guard: SqliteClockGuard) -> None:
 def test_db_deleted_fallback_supplies_mark(guard: SqliteClockGuard) -> None:
     guard.check_and_update(50_000.0)
     # wipe every DB row AND the DB itself
-    guard.db_path.unlink()
+    _unlink_db(guard.db_path)
     result = guard.check_and_update(60_000.0)
     assert result.ok
     assert result.last_seen_unix == 60_000  # advanced from surviving mark
@@ -70,7 +91,7 @@ def test_db_deleted_fallback_supplies_mark(guard: SqliteClockGuard) -> None:
 
 def test_db_deletion_cannot_lower_the_ratchet(guard: SqliteClockGuard) -> None:
     guard.check_and_update(50_000.0)
-    guard.db_path.unlink()
+    _unlink_db(guard.db_path)
     result = guard.check_and_update(1_000.0)  # rollback attempt after deleting DB
     # the fallback file still supplies the true mark -> rollback refused
     assert not result.ok

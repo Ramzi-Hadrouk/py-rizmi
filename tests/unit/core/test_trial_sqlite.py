@@ -1,12 +1,27 @@
 """Tests for TrialManager SQLite mode and legacy state migration."""
 from __future__ import annotations
 
+import gc
+import time
 from pathlib import Path
 
 import pytest
 
 from py_rizmi.core.state_store import StateStore
 from py_rizmi.core.trial import migrate_legacy_state, TrialManager
+
+
+def _unlink_db(path: Path, attempts: int = 5) -> None:
+    """Delete a SQLite file, tolerating transient Windows file locks."""
+    for attempt in range(attempts):
+        try:
+            path.unlink()
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            gc.collect()
+            time.sleep(0.1 * (attempt + 1))
 
 
 @pytest.fixture()
@@ -112,7 +127,7 @@ def test_db_deletion_does_not_reset_trial_start(keypair, tmp_path: Path) -> None
         first_payload_exp = s1.payload.exp
 
     # wipe the whole DB; trial.lic lives only in the DB so it's gone too.
-    db_path.unlink()
+    _unlink_db(db_path)
 
     tm2 = TrialManager(
         config_dir, trial_days=14, public_key=pub_pem,

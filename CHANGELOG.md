@@ -8,11 +8,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
-- CI: frozen-smoke e2e test now passes the build directory to Nuitka in the
-  glued `--output-dir=<value>` form (newer Nuitka rejects the separated form).
 - Docs site: added author/copyright/OG metadata and JSON-LD structured data,
   plus `robots.txt` and `sitemap.xml`, so search engines index the pages and
   correctly associate py-Rizmi with its author.
+
+## [2.1.2] - 2026-09-18
+
+### Fixed
+- **SQLite connection leak (Windows CI)**: `StateStore` now closes every
+  connection deterministically via a new `_session()` context manager
+  (open → commit/rollback → close). Previously `with conn:` only committed
+  the transaction and never closed; leaked handles kept the DB file locked,
+  which on Windows raised `PermissionError: [WinError 32]` when tests (or
+  apps) tried to delete the state database. Affected tests:
+  `test_db_deletion_does_not_reset_trial_start`,
+  `test_db_deletion_cannot_lower_the_ratchet`,
+  `test_db_deleted_fallback_supplies_mark`.
+- **Windows CI**: the previously failing frozen-smoke test no longer applies —
+  Nuitka packaging support was removed entirely (see *Removed*), eliminating
+  the `PermissionError: [WinError 32]` DB-deletion failures and the
+  "no binary produced" frozen-smoke failures at their root.
+- **SQLite connection leak (Windows)**: `StateStore` now closes every
+  connection deterministically via a new `_session()` context manager
+  (open → commit/rollback → close). Previously `with conn:` only committed
+  the transaction and never closed; leaked handles kept the DB file locked,
+  which on Windows raised `PermissionError: [WinError 32]` when tests (or
+  apps) tried to delete the state database.
+- External `StateStore._connect()` users (`LicenseActivator.deactivate`,
+  `rizmi app deactivate`) migrated to the closing `_session()` as well.
+
+### Changed
+- `SqliteClockGuard` no longer spams the file-based redundancy warning —
+  its real redundancy (DB + fallback file + optional shared DB) is invisible
+  to the parent `ClockGuard` path counter; suppression is opt-in via the new
+  `suppress_redundancy_warning` constructor flag.
+- Tests deleting SQLite state now use a small retry helper
+  (`gc.collect()` + backoff) so transient third-party file locks
+  (antivirus, indexers) cannot flake Windows runs.
+
+### Removed
+- **Nuitka support**: the `nuitka` dev dependency, `build.sh` (Nuitka build
+  script), the Nuitka frozen-smoke e2e test, and `_internal.env`
+  (`is_frozen()` / `packager()` frozen-build detection). The library no
+  longer references frozen builds; public API, state formats and licensing
+  logic are unchanged. End-to-end flow coverage remains via the reworked
+  unfrozen subprocess smoke test (`tests/e2e/test_smoke_script.py` +
+  `scripts/smoke_main.py`: exit 0 clean / exit 3 tamper-detected).
+  Docs (README, quickstart, packaging page) now reference PyInstaller-style
+  packaging without Nuitka recommendations.
 
 ## [2.1.0] - 2026-08-25
 

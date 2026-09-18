@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py-Rizmi — Offline-first licensing for Python apps</title>
-<meta name="description" content="Cryptographically signed, hardware-bound, offline-first licensing for Python applications. SQLite tamper-evident state, 3-line integration, works compiled with Nuitka.">
+<meta name="description" content="Cryptographically signed, hardware-bound, offline-first licensing for Python applications. SQLite tamper-evident state, 3-line integration, packaged-app ready.">
 <script>(function(){try{var t=localStorage.getItem("rz-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}})();</script>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="stylesheet" href="assets/style.css">
@@ -50,7 +50,7 @@
       <span class="badge">Offline-first · RS256 · HWID-bound</span>
     </div>
     <h1>Licensing for Python apps,<br><em>without the server.</em></h1>
-    <p class="sub">RSA-signed licenses bound to each machine, tamper-evident local state in one SQLite file, trials that survive clock rollback — and a CLI that answers support tickets for you. Works compiled (Nuitka&nbsp;/&nbsp;PyInstaller), works offline.</p>
+    <p class="sub">RSA-signed licenses bound to each machine, tamper-evident local state in one SQLite file, trials that survive clock rollback — and a CLI that answers support tickets for you. Works in packaged apps, works offline.</p>
     <div class="btn-row">
       <a class="btn primary" href="quickstart.html">Get started — 5 minutes</a>
       <a class="btn ghost" href="integration.html">Integration guide</a>
@@ -66,7 +66,7 @@
       <div class="card"><h3><span class="ico">⏱️</span>Anti-rollback clock guard</h3><p>A persisted high-water mark catches "wind the clock back and keep the trial". Redundant copies mean deleting one file (or the whole DB) resets nothing.</p></div>
       <div class="card"><h3><span class="ico">🎁</span>Trial periods built in</h3><p>The app issues itself a self-signed trial on first run. Deleting the trial restarts nothing; buying a license supersedes the trial mid-evaluation.</p></div>
       <div class="card"><h3><span class="ico">🧩</span>3-line integration</h3><p><code>LicenseGate</code> wires validation, trial, activation and watchdog behind one object with truthy statuses your UI can render directly.</p></div>
-      <div class="card"><h3><span class="ico">📦</span>Compiled-app ready</h3><p>Tested end-to-end inside Nuitka standalone binaries. Paths never derive from <code>__file__</code>; constants compile into C where patchers can't reach casually.</p></div>
+      <div class="card"><h3><span class="ico">📦</span>Compiled-app ready</h3><p>Works unchanged in PyInstaller and similar packagers. Paths never derive from <code>__file__</code>; state always lands in the platformdirs user-data location.</p></div>
       <div class="card"><h3><span class="ico">🚫</span>Revocation lists</h3><p>Publish a signed list of revoked license IDs; validators reject revoked installs even fully offline. Bad signatures are rejected loudly, never silently ignored.</p></div>
       <div class="card"><h3><span class="ico">🩺</span><code>rizmi doctor</code></h3><p>Machine ID readable? DB intact? Clock sane? Key pinned correctly? One command prints the checklist your support team was going to ask for anyway.</p></div>
       <div class="card"><h3><span class="ico">🖥️</span>In-app activation UI</h3><p>Your app hosts the paste box or file picker; py-rizmi runs the full validation chain before anything is stored. Two methods: token or file.</p></div>

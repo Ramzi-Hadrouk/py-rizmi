@@ -233,7 +233,7 @@ class LicenseActivator:
 
     def deactivate(self) -> None:
         """Archive the currently active license (no deletion of history)."""
-        with self.store._connect() as conn:
+        with self.store._session() as conn:
             conn.execute(
                 "UPDATE licenses SET slot='archived' WHERE slot=?", [_ACTIVE_SLOT]
             )

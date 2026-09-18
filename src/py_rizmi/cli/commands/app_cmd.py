@@ -170,6 +170,6 @@ def app_deactivate(
     except Exception as exc:
         _error(f"Cannot open store: {exc}")
         raise typer.Exit(2) from exc
-    with store._connect() as conn:
+    with store._session() as conn:
         conn.execute("UPDATE licenses SET slot='archived' WHERE slot='active'")
     console.print("[green]✓[/] Active license archived.")

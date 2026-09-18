@@ -71,7 +71,7 @@ pip install py-rizmi
 # With the PyQt6 desktop GUI
 pip install py-rizmi[gui]
 
-# Local development (tests, ruff, mypy, nuitka)
+# Local development (tests, ruff, mypy)
 pip install -e ".[dev]"
 
 # Everything
